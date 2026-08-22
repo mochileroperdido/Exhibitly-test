@@ -54,8 +54,9 @@ export function Stage() {
   const active = activeHotspotId ? entry.hotspots.find((h) => h.id === activeHotspotId) ?? null : null;
   const explore = mode === 'explore';
   const multiProduct = catalog.length > 1;
-  // Chrome is hidden while any modal is up so the model reads cleanly behind it.
-  const chromeVisible = explore && !leadOpen && !overviewOpen && !mediaOpen;
+  // Chrome hides behind the focused modals (lead form, video gallery), but stays
+  // up alongside the docked About sheet, which is non-blocking.
+  const chromeVisible = explore && !leadOpen && !mediaOpen;
 
   // Reset to the tuned hero camera angle whenever the product changes or the
   // kiosk returns to attract — camera-orbit is intentionally NOT bound as a
@@ -140,6 +141,19 @@ export function Stage() {
 
       {mode === 'attract' && <AttractOverlay entry={entry} />}
 
+      {/* Quiet product wordmark, top-center — anchors the screen in explore
+          without competing with the model. */}
+      <div
+        className={
+          'absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none transition-opacity duration-300 ' +
+          (chromeVisible ? 'opacity-100' : 'opacity-0')
+        }
+      >
+        <span className="font-display font-semibold text-[15px] uppercase tracking-[0.22em] text-graphite/60">
+          {entry.label}
+        </span>
+      </div>
+
       <ActionRail
         orientation={orientation}
         visible={chromeVisible}
@@ -170,7 +184,9 @@ export function Stage() {
 
       {active && <FeatureCard hotspot={active} orientation={orientation} onClose={() => selectHotspot(null)} />}
 
-      {overviewOpen && explore && <OverviewCard entry={entry} onClose={closeOverview} />}
+      {overviewOpen && explore && (
+        <OverviewCard entry={entry} orientation={orientation} onClose={closeOverview} />
+      )}
       <MediaGallery entry={entry} />
 
       <LeadCapturePill visible={chromeVisible} orientation={orientation} onOpen={openLead} />

@@ -88,10 +88,12 @@ function MinusIcon() {
   );
 }
 function ResetIcon() {
+  // Crosshair/recenter target — deliberately distinct from the circular
+  // auto-rotate arrow so the two controls don't read alike.
   return (
     <svg {...S} aria-hidden>
-      <path d="M3 12a9 9 0 1 1 9 9" />
-      <path d="M3 12V7m0 5h5" />
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 2.5v3.5M12 18v3.5M2.5 12h3.5M18 12h3.5" />
     </svg>
   );
 }
