@@ -12,6 +12,7 @@ export interface Lead {
   createdAt: string;
   variantViewed: string;
   hotspotsViewed: string[];
+  videosViewed: string[];
 }
 
 interface KioskState {
@@ -19,6 +20,10 @@ interface KioskState {
   activeEntryId: string;
   activeHotspotId: string | null;
   switcherOpen: boolean;
+  autoSpin: boolean;
+  overviewOpen: boolean;
+  mediaOpen: boolean;
+  activeMediaId: string | null;
   leadOpen: boolean;
   leadDone: boolean;
   leadError: boolean;
@@ -27,6 +32,8 @@ interface KioskState {
   leadInterest: string;
   leadsViewOpen: boolean;
   sessionHotspotsViewed: string[];
+  sessionMediaViewed: string[];
+  lastLoadMs: number | null;
   leads: Lead[];
 
   wake: () => void;
@@ -35,12 +42,19 @@ interface KioskState {
   selectEntry: (id: string) => void;
   selectHotspot: (id: string | null) => void;
   setSwitcherOpen: (open: boolean) => void;
+  toggleAutoSpin: () => void;
+  openOverview: () => void;
+  closeOverview: () => void;
+  openMedia: () => void;
+  closeMedia: () => void;
+  selectMedia: (id: string) => void;
   openLead: () => void;
   closeLead: () => void;
   setLeadField: (field: 'leadName' | 'leadEmail' | 'leadInterest', value: string) => void;
   submitLead: () => void;
   toggleLeadsView: () => void;
   clearLeads: () => void;
+  setLoadMs: (ms: number) => void;
 }
 
 const firstEntryId = catalog[0].id;
@@ -52,6 +66,10 @@ export const useKioskStore = create<KioskState>()(
       activeEntryId: firstEntryId,
       activeHotspotId: null,
       switcherOpen: false,
+      autoSpin: false,
+      overviewOpen: false,
+      mediaOpen: false,
+      activeMediaId: null,
       leadOpen: false,
       leadDone: false,
       leadError: false,
@@ -60,15 +78,23 @@ export const useKioskStore = create<KioskState>()(
       leadInterest: '',
       leadsViewOpen: false,
       sessionHotspotsViewed: [],
+      sessionMediaViewed: [],
+      lastLoadMs: null,
       leads: [],
 
-      wake: () => set({ mode: 'explore', switcherOpen: true }),
+      // Entering explore auto-opens the product overview once per session, so a
+      // visitor who never taps a hotspot still gets an intro.
+      wake: () => set({ mode: 'explore', switcherOpen: true, overviewOpen: true }),
 
       sleep: () =>
         set({
           mode: 'attract',
           activeHotspotId: null,
           switcherOpen: false,
+          autoSpin: false,
+          overviewOpen: false,
+          mediaOpen: false,
+          activeMediaId: null,
           leadOpen: false,
           leadDone: false,
           leadError: false,
@@ -76,6 +102,7 @@ export const useKioskStore = create<KioskState>()(
           leadEmail: '',
           leadInterest: '',
           sessionHotspotsViewed: [],
+          sessionMediaViewed: [],
         }),
 
       poke: () => {
@@ -101,6 +128,21 @@ export const useKioskStore = create<KioskState>()(
 
       setSwitcherOpen: (open) => set({ switcherOpen: open }),
 
+      toggleAutoSpin: () => set((s) => ({ autoSpin: !s.autoSpin })),
+
+      openOverview: () => set({ overviewOpen: true }),
+      closeOverview: () => set({ overviewOpen: false }),
+
+      openMedia: () => set({ mediaOpen: true, activeMediaId: null }),
+      closeMedia: () => set({ mediaOpen: false, activeMediaId: null }),
+      selectMedia: (id) =>
+        set((s) => ({
+          activeMediaId: id,
+          sessionMediaViewed: s.sessionMediaViewed.includes(id)
+            ? s.sessionMediaViewed
+            : [...s.sessionMediaViewed, id],
+        })),
+
       openLead: () => set({ leadOpen: true, leadDone: false, leadError: false }),
       closeLead: () =>
         set({ leadOpen: false, leadDone: false, leadError: false, leadName: '', leadEmail: '', leadInterest: '' }),
@@ -117,6 +159,9 @@ export const useKioskStore = create<KioskState>()(
         const hotspotTitles = s.sessionHotspotsViewed
           .map((id) => entry?.hotspots.find((h) => h.id === id)?.title)
           .filter((t): t is string => !!t);
+        const videoTitles = s.sessionMediaViewed
+          .map((id) => entry?.media.find((m) => m.id === id)?.title)
+          .filter((t): t is string => !!t);
         const lead: Lead = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           name: s.leadName.trim(),
@@ -125,6 +170,7 @@ export const useKioskStore = create<KioskState>()(
           createdAt: new Date().toISOString(),
           variantViewed: entry?.label ?? s.activeEntryId,
           hotspotsViewed: hotspotTitles,
+          videosViewed: videoTitles,
         };
         set((prev) => ({ leads: [...prev.leads, lead], leadDone: true, leadError: false }));
       },
@@ -132,6 +178,8 @@ export const useKioskStore = create<KioskState>()(
       toggleLeadsView: () => set((s) => ({ leadsViewOpen: !s.leadsViewOpen })),
 
       clearLeads: () => set({ leads: [] }),
+
+      setLoadMs: (ms) => set({ lastLoadMs: ms }),
     }),
     {
       name: 'exhibly-kiosk',

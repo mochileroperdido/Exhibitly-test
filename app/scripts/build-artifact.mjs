@@ -9,12 +9,18 @@ const cssFile = readdirSync(assets).find((f) => f.endsWith('.css'));
 let js = readFileSync(join(assets, jsFile), 'utf8');
 const css = readFileSync(join(assets, cssFile), 'utf8');
 
-// Embed the GLB as a data URI so the page has zero external fetches.
-const glb = readFileSync(join(dist, 'models', 'drill-new.glb'));
-const glbUri = `data:model/gltf-binary;base64,${glb.toString('base64')}`;
-const before = js.length;
-js = js.split('/models/drill-new.glb').join(glbUri);
-console.log('model url replaced:', before !== js.length);
+// Embed every static asset the app references (model + videos) as a data URI,
+// so the single-file page has zero external fetches and previews completely.
+const inline = (dir, file, mime) => {
+  const buf = readFileSync(join(dist, dir, file));
+  const uri = `data:${mime};base64,${buf.toString('base64')}`;
+  const before = js.length;
+  js = js.split(`/${dir}/${file}`).join(uri);
+  console.log(`inlined /${dir}/${file}:`, before !== js.length, `(${(buf.length / 1024 / 1024).toFixed(2)} MB)`);
+};
+
+for (const f of readdirSync(join(dist, 'models'))) if (f.endsWith('.glb')) inline('models', f, 'model/gltf-binary');
+for (const f of readdirSync(join(dist, 'media'))) if (f.endsWith('.mp4')) inline('media', f, 'video/mp4');
 
 const html = `<title>Exhibly Kiosk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />

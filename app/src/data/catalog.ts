@@ -42,6 +42,33 @@ export const catalog: CatalogEntry[] = [
     id: 'drill-new',
     label: 'Cordless Drill',
     subtitle: 'Polished 3D capture',
+    // Placeholder marketing copy for the demo — invented but plausible for a
+    // 12V cordless drill/driver. Swap for real client copy before a live show.
+    tagline: 'Compact 12V drill/driver built for all-day control.',
+    overview:
+      'A lightweight cordless drill/driver sized for cabinets, fixtures, and everyday assembly. A 24-position clutch and variable-speed trigger give you fine control on delicate work, while the keyless chuck and one-hand battery swap keep you moving between tasks.',
+    specs: [
+      { label: 'Voltage', value: '12V' },
+      { label: 'Chuck', value: '10mm keyless' },
+      { label: 'Clutch', value: '24 positions' },
+      { label: 'Max torque', value: '30 N·m' },
+      { label: 'No-load speed', value: '0–1,500 rpm' },
+      { label: 'Weight', value: '1.1 kg' },
+    ],
+    media: [
+      {
+        id: 'right-angle',
+        type: 'video',
+        src: '/media/right-angle-drilling.mp4',
+        title: 'Right-angle drilling in tight spaces',
+      },
+      {
+        id: 'install-bit',
+        type: 'video',
+        src: '/media/install-drill-bit.mp4',
+        title: 'Installing a drill bit',
+      },
+    ],
     modelUrl: '/models/drill-new.glb',
     source: 'Blender / photogrammetry (optimized)',
     fileSizeMB: 1.71,
