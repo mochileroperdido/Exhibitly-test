@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { catalog } from '../data/catalog';
+import * as analytics from '../analytics';
+
+const hotspotTitle = (entryId: string, hotspotId: string) =>
+  catalog.find((c) => c.id === entryId)?.hotspots.find((h) => h.id === hotspotId)?.title ?? hotspotId;
+const mediaTitle = (entryId: string, mediaId: string) =>
+  catalog.find((c) => c.id === entryId)?.media.find((m) => m.id === mediaId)?.title ?? mediaId;
 
 export type Mode = 'attract' | 'explore';
 
@@ -84,9 +90,13 @@ export const useKioskStore = create<KioskState>()(
 
       // Entering explore auto-opens the product overview once per session, so a
       // visitor who never taps a hotspot still gets an intro.
-      wake: () => set({ mode: 'explore', switcherOpen: true, overviewOpen: true }),
+      wake: () => {
+        analytics.startSession(get().activeEntryId);
+        set({ mode: 'explore', switcherOpen: true, overviewOpen: true });
+      },
 
-      sleep: () =>
+      sleep: () => {
+        analytics.endSession();
         set({
           mode: 'attract',
           activeHotspotId: null,
@@ -103,7 +113,8 @@ export const useKioskStore = create<KioskState>()(
           leadInterest: '',
           sessionHotspotsViewed: [],
           sessionMediaViewed: [],
-        }),
+        });
+      },
 
       poke: () => {
         if (get().mode === 'explore' && !get().switcherOpen) set({ switcherOpen: true });
@@ -114,16 +125,23 @@ export const useKioskStore = create<KioskState>()(
       // keeps sessionHotspotsViewed accumulating rather than resetting it —
       // that history is what makes the lead's "what did they explore" context
       // meaningful to a follow-up sales rep.
-      selectEntry: (id) => set({ activeEntryId: id, activeHotspotId: null }),
+      selectEntry: (id) => {
+        analytics.viewProduct(id);
+        set({ activeEntryId: id, activeHotspotId: null });
+      },
 
       selectHotspot: (id) => {
-        set((s) => ({
-          activeHotspotId: s.activeHotspotId === id ? null : id,
+        const s = get();
+        const willOpen = s.activeHotspotId === id ? null : id;
+        if (willOpen) analytics.openHotspot(hotspotTitle(s.activeEntryId, willOpen));
+        else analytics.closeHotspot();
+        set({
+          activeHotspotId: willOpen,
           sessionHotspotsViewed:
             id && !s.sessionHotspotsViewed.includes(id)
               ? [...s.sessionHotspotsViewed, id]
               : s.sessionHotspotsViewed,
-        }));
+        });
       },
 
       setSwitcherOpen: (open) => set({ switcherOpen: open }),
@@ -135,13 +153,15 @@ export const useKioskStore = create<KioskState>()(
 
       openMedia: () => set({ mediaOpen: true, activeMediaId: null }),
       closeMedia: () => set({ mediaOpen: false, activeMediaId: null }),
-      selectMedia: (id) =>
+      selectMedia: (id) => {
+        analytics.playVideo(mediaTitle(get().activeEntryId, id));
         set((s) => ({
           activeMediaId: id,
           sessionMediaViewed: s.sessionMediaViewed.includes(id)
             ? s.sessionMediaViewed
             : [...s.sessionMediaViewed, id],
-        })),
+        }));
+      },
 
       openLead: () => set({ leadOpen: true, leadDone: false, leadError: false }),
       closeLead: () =>
@@ -172,6 +192,12 @@ export const useKioskStore = create<KioskState>()(
           hotspotsViewed: hotspotTitles,
           videosViewed: videoTitles,
         };
+        analytics.captureLead({
+          name: lead.name,
+          email: lead.email,
+          interest: lead.interest,
+          explored: [...hotspotTitles, ...videoTitles],
+        });
         set((prev) => ({ leads: [...prev.leads, lead], leadDone: true, leadError: false }));
       },
 
