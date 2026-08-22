@@ -1,0 +1,26 @@
+# Netlify deploy config for the Exhibly kiosk.
+#
+# The app is a static Vite SPA living in the app/ subfolder. Connect this
+# repo in Netlify (New site from Git) and it needs no dashboard settings —
+# everything below is read from here. Every push to the production branch
+# redeploys automatically; pull requests get preview deploys.
+
+[build]
+  # Build runs inside app/ ...
+  base = "app"
+  command = "npm run build"
+  # ... so publish is relative to base -> app/dist
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # The model-optimization devDependencies include Playwright, whose install
+  # step would otherwise download a browser on the build host — pointless for
+  # a static build, so skip it to keep deploys fast.
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+
+# Single-page app: serve index.html for any path that isn't a real file.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
