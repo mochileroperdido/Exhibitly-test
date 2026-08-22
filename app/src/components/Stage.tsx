@@ -193,6 +193,18 @@ export function Stage() {
       <LeadCaptureForm />
       {leadsViewOpen && <LeadsDebugView />}
 
+      {/* TEMPORARY demo shortcut into the Insights dashboard (upper-right).
+          Not part of the real booth kiosk — the dashboard is a separate team
+          URL in production. Dashed styling flags it as internal/temporary. */}
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => { window.location.hash = '#/insights'; }}
+        aria-label="Open Insights dashboard (temporary)"
+        className="absolute top-3 right-3 z-[45] flex items-center gap-1.5 min-h-9 px-3.5 rounded-full border border-dashed border-graphite/35 bg-mist/70 backdrop-blur-md text-graphite/70 font-mono text-[11px] tracking-[0.12em] uppercase cursor-pointer"
+      >
+        Insights ↗
+      </button>
+
       <Watermark />
     </div>
   );
