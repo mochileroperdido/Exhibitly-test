@@ -7,6 +7,10 @@ export interface ModelViewerElement extends HTMLElement {
   fieldOfView: string;
   loaded: boolean;
   src: string;
+  /** Current orbit; radius is in meters. */
+  getCameraOrbit(): { theta: number; phi: number; radius: number };
+  /** Current vertical field of view, in degrees. */
+  getFieldOfView(): number;
 }
 
 type ModelViewerJSX = DetailedHTMLProps<HTMLAttributes<ModelViewerElement>, ModelViewerElement> & {
@@ -18,6 +22,9 @@ type ModelViewerJSX = DetailedHTMLProps<HTMLAttributes<ModelViewerElement>, Mode
   cameraOrbit?: string;
   minCameraOrbit?: string;
   maxCameraOrbit?: string;
+  fieldOfView?: string;
+  minFieldOfView?: string;
+  maxFieldOfView?: string;
   exposure?: number | string;
   shadowIntensity?: number | string;
   environmentImage?: string;
