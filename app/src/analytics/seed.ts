@@ -6,8 +6,7 @@ import type { AnalyticsEvent } from './types';
 
 export const PRODUCTS: Record<string, string> = {
   'drill-new': 'Cordless Drill',
-  'impact-driver': 'Impact Driver',
-  'angle-grinder': 'Angle Grinder',
+  'tool-chest': 'Rolling Tool Chest',
 };
 
 interface Feat { title: string; tapProb: number; dwell: number }
@@ -19,17 +18,11 @@ const FEATURES: Record<string, Feat[]> = {
     { title: 'LED Work Light', tapProb: 0.42, dwell: 6 },
     { title: 'Compact Li-Ion Battery', tapProb: 0.40, dwell: 16 },
   ],
-  'impact-driver': [
-    { title: 'Hex Quick-Release', tapProb: 0.72, dwell: 12 },
-    { title: 'Brushless Motor', tapProb: 0.6, dwell: 17 },
-    { title: '3-Speed Selector', tapProb: 0.5, dwell: 10 },
-    { title: 'Belt Hook', tapProb: 0.3, dwell: 5 },
-  ],
-  'angle-grinder': [
-    { title: 'Tool-Free Guard', tapProb: 0.7, dwell: 13 },
-    { title: 'Spindle Lock', tapProb: 0.55, dwell: 9 },
-    { title: 'Anti-Vibration Handle', tapProb: 0.5, dwell: 15 },
-    { title: 'Restart Protection', tapProb: 0.45, dwell: 12 },
+  'tool-chest': [
+    { title: 'Locking Swivel Casters', tapProb: 0.72, dwell: 13 },
+    { title: 'Powder-Coated Steel Tub', tapProb: 0.6, dwell: 15 },
+    { title: 'Side Push Handle', tapProb: 0.48, dwell: 9 },
+    { title: 'Reinforced Top Rim', tapProb: 0.4, dwell: 7 },
   ],
 };
 const VIDEOS: Record<string, { title: string; base: number }[]> = {
@@ -37,18 +30,13 @@ const VIDEOS: Record<string, { title: string; base: number }[]> = {
     { title: 'Right-angle drilling in tight spaces', base: 0.61 },
     { title: 'Installing a drill bit', base: 0.72 },
   ],
-  'impact-driver': [{ title: 'Driving long screws without stripping', base: 0.66 }],
-  'angle-grinder': [
-    { title: 'Cutting rebar safely', base: 0.58 },
-    { title: 'Changing the disc', base: 0.7 },
-  ],
+  'tool-chest': [],
 };
 
 // Sessions per product per day — the drill is the hero exhibit.
 const SESSIONS: Record<string, [number, number]> = {
   'drill-new': [78, 96],
-  'impact-driver': [42, 50],
-  'angle-grinder': [30, 34],
+  'tool-chest': [46, 58],
 };
 const DAYS = ['2026-04-14', '2026-04-15'];
 const HOUR_WEIGHTS = [3, 5, 8, 10, 9, 7, 10, 12, 8, 5]; // 9a..6p, peak 4p
