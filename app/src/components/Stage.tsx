@@ -49,6 +49,7 @@ export function Stage() {
   const mvRef = useRef<ModelViewerElement | null>(null);
   const loadStartRef = useRef(0);
   const lastTapRef = useRef(0);
+  const swipeRef = useRef({ x: 0, y: 0, swiped: false });
 
   const entry = catalog.find((e) => e.id === activeEntryId) ?? catalog[0];
   const active = activeHotspotId ? entry.hotspots.find((h) => h.id === activeHotspotId) ?? null : null;
@@ -90,8 +91,32 @@ export function Stage() {
     el.fieldOfView = `${next}deg`;
   };
 
+  // Attract-mode swipe: a horizontal drag browses the catalog (the hero model
+  // swaps); a plain tap wakes into explore. cameraControls is off in attract so
+  // the drag never fights model-viewer's own camera.
+  const SWIPE_MIN = 40;
+  const onStagePointerDown = (e: React.PointerEvent) => {
+    poke();
+    if (mode === 'attract') swipeRef.current = { x: e.clientX, y: e.clientY, swiped: false };
+  };
+  const onStagePointerUp = (e: React.PointerEvent) => {
+    if (mode !== 'attract' || !multiProduct) return;
+    const dx = e.clientX - swipeRef.current.x;
+    const dy = e.clientY - swipeRef.current.y;
+    if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy)) {
+      const i = catalog.findIndex((c) => c.id === activeEntryId);
+      const nextI = (i + (dx < 0 ? 1 : -1) + catalog.length) % catalog.length;
+      selectEntry(catalog[nextI].id);
+      swipeRef.current.swiped = true;
+    }
+  };
+
   const onStageClick = () => {
     if (mode === 'attract') {
+      if (swipeRef.current.swiped) {
+        swipeRef.current.swiped = false;
+        return;
+      }
       wake();
       return;
     }
@@ -111,13 +136,14 @@ export function Stage() {
     <div
       className="fixed inset-0 overflow-hidden touch-none"
       style={{ background: 'radial-gradient(ellipse at 50% 42%, #ffffff 0%, #f2f1ee 62%, #e7e5e0 100%)' }}
-      onPointerDownCapture={poke}
+      onPointerDownCapture={onStagePointerDown}
+      onPointerUpCapture={onStagePointerUp}
     >
       <model-viewer
         ref={mvRef}
         src={entry.modelUrl}
         alt={entry.label}
-        cameraControls
+        cameraControls={explore}
         autoRotate={mode === 'attract' || (explore && autoSpin)}
         autoRotateDelay={0}
         cameraOrbit={defaultCameraOrbit}
@@ -139,7 +165,9 @@ export function Stage() {
         />
       </model-viewer>
 
-      {mode === 'attract' && <AttractOverlay entry={entry} />}
+      {mode === 'attract' && (
+        <AttractOverlay entries={catalog} activeEntryId={activeEntryId} onSelect={selectEntry} onExplore={wake} />
+      )}
 
       {/* Quiet product wordmark, top-center — anchors the screen in explore
           without competing with the model. */}

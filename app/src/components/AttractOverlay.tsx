@@ -1,22 +1,93 @@
 import type { CatalogEntry } from '../data/types';
 
-export function AttractOverlay({ entry }: { entry: CatalogEntry }) {
+/** Attract-screen catalog tray: a legibility scrim at the bottom holding the
+ * product name, a swipeable carousel (dots + chevrons) to browse the catalog
+ * before exploring, and the tap-to-explore CTA. The hero model behind swaps as
+ * the selection changes. */
+export function AttractOverlay({
+  entries,
+  activeEntryId,
+  onSelect,
+  onExplore,
+}: {
+  entries: CatalogEntry[];
+  activeEntryId: string;
+  onSelect: (id: string) => void;
+  onExplore: () => void;
+}) {
+  const multi = entries.length > 1;
+  const idx = Math.max(0, entries.findIndex((e) => e.id === activeEntryId));
+  const entry = entries[idx] ?? entries[0];
+  const step = (d: number) => onSelect(entries[(idx + d + entries.length) % entries.length].id);
+
+  const chevron = (dir: 'left' | 'right') => (
+    <button
+      aria-label={dir === 'left' ? 'Previous product' : 'Next product'}
+      onClick={() => step(dir === 'left' ? -1 : 1)}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="focus-ring flex-none grid place-items-center w-12 h-12 rounded-full border border-black/12 bg-mist/80 backdrop-blur-md text-graphite cursor-pointer"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        {dir === 'left' ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}
+      </svg>
+    </button>
+  );
+
   return (
     <div
-      className="absolute left-0 right-0 bottom-[9%] flex flex-col items-center gap-3.5 pointer-events-none animate-[fade-in_0.4s_ease-out]"
       data-screen-label="Attract"
+      className="absolute left-0 right-0 bottom-0 pt-28 pb-8 flex flex-col items-center gap-3 animate-[fade-in_0.4s_ease-out] pointer-events-none"
+      style={{
+        background:
+          'linear-gradient(to top, rgba(242,241,238,0.97) 0%, rgba(242,241,238,0.92) 42%, rgba(242,241,238,0) 100%)',
+      }}
     >
-      <span className="flex items-center gap-2.5 font-mono text-sm tracking-[0.3em]" style={{ color: 'var(--accent)' }}>
-        <span
-          className="w-2.5 h-2.5 rounded-full animate-[pulse_1.8s_ease-in-out_infinite]"
-          style={{ background: 'var(--accent)' }}
-        />
+      <button
+        onClick={onExplore}
+        onPointerDown={(e) => e.stopPropagation()}
+        className="focus-ring pointer-events-auto flex items-center gap-2.5 bg-transparent border-none cursor-pointer font-mono text-sm tracking-[0.3em]"
+        style={{ color: 'var(--accent)' }}
+      >
+        <span className="w-2.5 h-2.5 rounded-full animate-[pulse_1.8s_ease-in-out_infinite]" style={{ background: 'var(--accent)' }} />
         TAP TO EXPLORE
-      </span>
-      <span className="font-display font-bold uppercase leading-none tracking-[0.02em] text-graphite text-center text-[clamp(36px,7.5vw,84px)]">
-        {entry.label}
-      </span>
-      <span className="font-mono text-[11px] tracking-[0.2em] text-graphite/55 uppercase">{entry.subtitle}</span>
+      </button>
+
+      <div className="flex items-center gap-4 pointer-events-auto">
+        {multi && chevron('left')}
+        <div className="flex flex-col items-center min-w-[min(78vw,560px)]">
+          <span className="font-display font-bold uppercase leading-none tracking-[0.02em] text-graphite text-center text-[clamp(34px,7vw,78px)]">
+            {entry.label}
+          </span>
+          <span className="mt-2 font-mono text-[11px] tracking-[0.2em] text-graphite/55 uppercase">{entry.subtitle}</span>
+        </div>
+        {multi && chevron('right')}
+      </div>
+
+      {multi && (
+        <div className="flex items-center gap-2.5 pointer-events-auto mt-1">
+          {entries.map((e) => (
+            <button
+              key={e.id}
+              aria-label={`Show ${e.label}`}
+              aria-current={e.id === activeEntryId}
+              onClick={() => onSelect(e.id)}
+              onPointerDown={(ev) => ev.stopPropagation()}
+              className="focus-ring border-none cursor-pointer p-0 rounded-full transition-all"
+              style={{
+                width: e.id === activeEntryId ? 26 : 9,
+                height: 9,
+                background: e.id === activeEntryId ? 'var(--accent)' : 'rgba(28,30,34,0.25)',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {multi && (
+        <span className="font-mono text-[10px] tracking-[0.22em] text-graphite/40 uppercase mt-0.5">
+          Swipe to browse {entries.length} products
+        </span>
+      )}
     </div>
   );
 }
