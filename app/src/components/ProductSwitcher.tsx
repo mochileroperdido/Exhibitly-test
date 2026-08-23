@@ -40,7 +40,7 @@ export function ProductSwitcher({
               <span className="flex items-center gap-2">
                 {isActive && <span className="w-1.5 h-1.5 bg-current" />}
                 <span className="font-display font-semibold text-[19px] tracking-[0.03em] uppercase">
-                  {entry.label.replace('Drill — ', '')}
+                  {entry.label}
                 </span>
               </span>
               <span className="font-mono text-[9px] tracking-[0.16em] uppercase opacity-70">{entry.subtitle}</span>

@@ -49,6 +49,7 @@ export function Stage() {
   const mvRef = useRef<ModelViewerElement | null>(null);
   const loadStartRef = useRef(0);
   const lastTapRef = useRef(0);
+  const swipeRef = useRef({ x: 0, y: 0, swiped: false });
 
   const entry = catalog.find((e) => e.id === activeEntryId) ?? catalog[0];
   const active = activeHotspotId ? entry.hotspots.find((h) => h.id === activeHotspotId) ?? null : null;
@@ -75,6 +76,18 @@ export function Stage() {
     return () => el.removeEventListener('load', onLoad);
   }, [activeEntryId, setLoadMs]);
 
+  // Attract auto-advance: cycle through the catalog while idle so all products
+  // get seen. Re-arms on activeEntryId change, so a manual swipe/chevron/dot
+  // resets the timer; stops once explore is entered.
+  useEffect(() => {
+    if (mode !== 'attract' || catalog.length < 2) return;
+    const id = setTimeout(() => {
+      const i = catalog.findIndex((c) => c.id === activeEntryId);
+      selectEntry(catalog[(i + 1) % catalog.length].id);
+    }, 5000);
+    return () => clearTimeout(id);
+  }, [mode, activeEntryId, selectEntry]);
+
   const resetView = () => {
     const el = mvRef.current;
     if (!el) return;
@@ -90,8 +103,32 @@ export function Stage() {
     el.fieldOfView = `${next}deg`;
   };
 
+  // Attract-mode swipe: a horizontal drag browses the catalog (the hero model
+  // swaps); a plain tap wakes into explore. cameraControls is off in attract so
+  // the drag never fights model-viewer's own camera.
+  const SWIPE_MIN = 40;
+  const onStagePointerDown = (e: React.PointerEvent) => {
+    poke();
+    if (mode === 'attract') swipeRef.current = { x: e.clientX, y: e.clientY, swiped: false };
+  };
+  const onStagePointerUp = (e: React.PointerEvent) => {
+    if (mode !== 'attract' || !multiProduct) return;
+    const dx = e.clientX - swipeRef.current.x;
+    const dy = e.clientY - swipeRef.current.y;
+    if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy)) {
+      const i = catalog.findIndex((c) => c.id === activeEntryId);
+      const nextI = (i + (dx < 0 ? 1 : -1) + catalog.length) % catalog.length;
+      selectEntry(catalog[nextI].id);
+      swipeRef.current.swiped = true;
+    }
+  };
+
   const onStageClick = () => {
     if (mode === 'attract') {
+      if (swipeRef.current.swiped) {
+        swipeRef.current.swiped = false;
+        return;
+      }
       wake();
       return;
     }
@@ -111,13 +148,14 @@ export function Stage() {
     <div
       className="fixed inset-0 overflow-hidden touch-none"
       style={{ background: 'radial-gradient(ellipse at 50% 42%, #ffffff 0%, #f2f1ee 62%, #e7e5e0 100%)' }}
-      onPointerDownCapture={poke}
+      onPointerDownCapture={onStagePointerDown}
+      onPointerUpCapture={onStagePointerUp}
     >
       <model-viewer
         ref={mvRef}
         src={entry.modelUrl}
         alt={entry.label}
-        cameraControls
+        cameraControls={explore}
         autoRotate={mode === 'attract' || (explore && autoSpin)}
         autoRotateDelay={0}
         cameraOrbit={defaultCameraOrbit}
@@ -139,7 +177,9 @@ export function Stage() {
         />
       </model-viewer>
 
-      {mode === 'attract' && <AttractOverlay entry={entry} />}
+      {mode === 'attract' && (
+        <AttractOverlay entries={catalog} activeEntryId={activeEntryId} onSelect={selectEntry} onExplore={wake} />
+      )}
 
       {/* Quiet product wordmark, top-center — anchors the screen in explore
           without competing with the model. */}
@@ -192,6 +232,18 @@ export function Stage() {
       <LeadCapturePill visible={chromeVisible} orientation={orientation} onOpen={openLead} />
       <LeadCaptureForm />
       {leadsViewOpen && <LeadsDebugView />}
+
+      {/* TEMPORARY demo shortcut into the Insights dashboard (upper-right).
+          Not part of the real booth kiosk — the dashboard is a separate team
+          URL in production. Dashed styling flags it as internal/temporary. */}
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => { window.location.hash = '#/insights'; }}
+        aria-label="Open Insights dashboard (temporary)"
+        className="absolute top-3 right-3 z-[45] flex items-center gap-1.5 min-h-9 px-3.5 rounded-full border border-dashed border-graphite/35 bg-mist/70 backdrop-blur-md text-graphite/70 font-mono text-[11px] tracking-[0.12em] uppercase cursor-pointer"
+      >
+        Insights ↗
+      </button>
 
       <Watermark />
     </div>
