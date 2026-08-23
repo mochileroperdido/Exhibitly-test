@@ -5,18 +5,14 @@ export function ProductSwitcher({
   activeEntryId,
   open,
   orientation,
-  loadMs,
   onSelect,
 }: {
   entries: CatalogEntry[];
   activeEntryId: string;
   open: boolean;
   orientation: 'portrait' | 'landscape';
-  loadMs: number | null;
   onSelect: (id: string) => void;
 }) {
-  const active = entries.find((e) => e.id === activeEntryId) ?? entries[0];
-
   const base =
     'absolute z-30 flex gap-1.5 p-2 bg-mist/78 backdrop-blur-md border border-black/12 rounded-[26px] transition-[transform,opacity] duration-300 ease-out';
   const posClass =
@@ -51,28 +47,6 @@ export function ProductSwitcher({
             </button>
           );
         })}
-      </div>
-
-      {/* Comparison stats chip — surfaces while the switcher is open, so the
-          size-vs-experience tradeoff between captures is visible, not just implied. */}
-      <div
-        className={
-          'absolute z-30 font-mono text-[10px] tracking-[0.12em] uppercase text-graphite/70 bg-mist/78 backdrop-blur-md border border-black/12 rounded-lg px-3 py-2 transition-opacity duration-300 ' +
-          (orientation === 'portrait' ? 'left-1/2 -translate-x-1/2 bottom-[76px]' : 'left-[18px] top-[calc(50%+96px)]') +
-          (open ? ' opacity-100' : ' opacity-0 pointer-events-none')
-        }
-      >
-        <span>{active.source}</span>
-        <span className="mx-1.5 opacity-40">·</span>
-        <span>{active.fileSizeMB.toFixed(2)} MB</span>
-        <span className="mx-1.5 opacity-40">·</span>
-        <span>{active.triangleCount.toLocaleString()} tris</span>
-        {loadMs != null && (
-          <>
-            <span className="mx-1.5 opacity-40">·</span>
-            <span>loaded in {loadMs}ms</span>
-          </>
-        )}
       </div>
     </>
   );

@@ -1,9 +1,10 @@
 import { useKioskStore } from '../store/kioskStore';
+import { catalog } from '../data/catalog';
 
 function toCSV(rows: ReturnType<typeof useKioskStore.getState>['leads']): string {
-  const header = ['Name', 'Email', 'Interest', 'Variant viewed', 'Hotspots viewed', 'Captured at'];
+  const header = ['Name', 'Email', 'Interest', 'Variant viewed', 'Hotspots viewed', 'Videos viewed', 'Captured at'];
   const lines = rows.map((r) =>
-    [r.name, r.email, r.interest, r.variantViewed, r.hotspotsViewed.join('; '), r.createdAt]
+    [r.name, r.email, r.interest, r.variantViewed, r.hotspotsViewed.join('; '), r.videosViewed.join('; '), r.createdAt]
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
       .join(','),
   );
@@ -13,10 +14,14 @@ function toCSV(rows: ReturnType<typeof useKioskStore.getState>['leads']): string
 export function LeadsDebugView() {
   const open = useKioskStore((s) => s.leadsViewOpen);
   const leads = useKioskStore((s) => s.leads);
+  const activeEntryId = useKioskStore((s) => s.activeEntryId);
+  const lastLoadMs = useKioskStore((s) => s.lastLoadMs);
   const toggle = useKioskStore((s) => s.toggleLeadsView);
   const clearLeads = useKioskStore((s) => s.clearLeads);
 
   if (!open) return null;
+
+  const entry = catalog.find((e) => e.id === activeEntryId) ?? catalog[0];
 
   const downloadCSV = () => {
     const blob = new Blob([toCSV(leads)], { type: 'text/csv' });
@@ -39,6 +44,11 @@ export function LeadsDebugView() {
           <div className="font-display font-bold text-3xl uppercase tracking-[0.02em]">Captured leads</div>
           <div className="font-mono text-xs text-mist/50 mt-1">
             Internal view · tap the watermark 5× to reopen · not visitor-facing
+          </div>
+          {/* Model telemetry — relocated here from the visitor UI. */}
+          <div className="font-mono text-[11px] tracking-[0.08em] uppercase text-mist/45 mt-2">
+            {entry.source} · {entry.fileSizeMB.toFixed(2)} MB · {entry.triangleCount.toLocaleString()} tris
+            {lastLoadMs != null && ` · loaded in ${lastLoadMs}ms`}
           </div>
         </div>
         <div className="flex gap-2">
@@ -80,6 +90,7 @@ export function LeadsDebugView() {
                 <th className="py-2 pr-4">Interest</th>
                 <th className="py-2 pr-4">Variant viewed</th>
                 <th className="py-2 pr-4">Hotspots viewed</th>
+                <th className="py-2 pr-4">Videos viewed</th>
                 <th className="py-2 pr-4">Captured</th>
               </tr>
             </thead>
@@ -91,6 +102,7 @@ export function LeadsDebugView() {
                   <td className="py-2.5 pr-4">{lead.interest || '—'}</td>
                   <td className="py-2.5 pr-4">{lead.variantViewed}</td>
                   <td className="py-2.5 pr-4">{lead.hotspotsViewed.join(', ') || '—'}</td>
+                  <td className="py-2.5 pr-4">{lead.videosViewed.join(', ') || '—'}</td>
                   <td className="py-2.5 pr-4 font-mono text-xs text-mist/60">
                     {new Date(lead.createdAt).toLocaleString()}
                   </td>

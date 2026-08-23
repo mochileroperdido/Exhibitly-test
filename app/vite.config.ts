@@ -23,7 +23,7 @@ export default defineConfig({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 150 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,glb,mp4}'],
         runtimeCaching: [
           {
             urlPattern: /\/models\/.*\.glb$/,
@@ -32,6 +32,17 @@ export default defineConfig({
               cacheName: 'model-cache',
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 30 },
               cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/media\/.*\.(mp4|jpg)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'media-cache',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+              // Videos are served with range requests; let workbox honor them.
+              rangeRequests: true,
             },
           },
         ],
