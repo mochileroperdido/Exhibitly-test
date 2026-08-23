@@ -76,6 +76,18 @@ export function Stage() {
     return () => el.removeEventListener('load', onLoad);
   }, [activeEntryId, setLoadMs]);
 
+  // Attract auto-advance: cycle through the catalog while idle so all products
+  // get seen. Re-arms on activeEntryId change, so a manual swipe/chevron/dot
+  // resets the timer; stops once explore is entered.
+  useEffect(() => {
+    if (mode !== 'attract' || catalog.length < 2) return;
+    const id = setTimeout(() => {
+      const i = catalog.findIndex((c) => c.id === activeEntryId);
+      selectEntry(catalog[(i + 1) % catalog.length].id);
+    }, 5000);
+    return () => clearTimeout(id);
+  }, [mode, activeEntryId, selectEntry]);
+
   const resetView = () => {
     const el = mvRef.current;
     if (!el) return;
