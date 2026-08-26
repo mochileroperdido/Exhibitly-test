@@ -1,5 +1,10 @@
 import { useEffect } from 'react';
-import { useKioskStore } from '../store/kioskStore';
+import { useKioskStore, CONSENT_TEXT } from '../store/kioskStore';
+
+// Where the exhibitor's privacy notice lives. Falls back to the Lathe notice
+// until a real show sets its own per-show privacy URL via env.
+const PRIVACY_URL =
+  (import.meta.env.VITE_PRIVACY_URL as string | undefined) || 'https://meetlathe.com/privacy';
 
 const INTERESTS = ['Pricing', 'Demo unit', 'Partnership'];
 
@@ -36,7 +41,9 @@ export function LeadCaptureForm() {
   const leadName = useKioskStore((s) => s.leadName);
   const leadEmail = useKioskStore((s) => s.leadEmail);
   const leadInterest = useKioskStore((s) => s.leadInterest);
+  const leadConsent = useKioskStore((s) => s.leadConsent);
   const setLeadField = useKioskStore((s) => s.setLeadField);
+  const setLeadConsent = useKioskStore((s) => s.setLeadConsent);
   const submitLead = useKioskStore((s) => s.submitLead);
   const closeLead = useKioskStore((s) => s.closeLead);
 
@@ -115,7 +122,34 @@ export function LeadCaptureForm() {
               })}
             </div>
 
-            {leadError && <div className="mt-3 text-sm text-[#c0341d]">Please add your name and email.</div>}
+            {/* GDPR opt-in — unticked by default; submit is gated on it in the
+                store. Records the exact wording + version alongside the lead. */}
+            <label className="flex items-start gap-2.5 mt-4 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={leadConsent}
+                onChange={(e) => setLeadConsent(e.target.checked)}
+                className="focus-ring mt-0.5 w-5 h-5 shrink-0 cursor-pointer accent-[var(--accent)]"
+              />
+              <span className="text-[13px] leading-snug text-graphite/70">
+                {CONSENT_TEXT}{' '}
+                <a
+                  href={PRIVACY_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="underline text-graphite/70 hover:text-graphite"
+                >
+                  Privacy notice
+                </a>
+              </span>
+            </label>
+
+            {leadError && (
+              <div className="mt-3 text-sm text-[#c0341d]">
+                Please add your name, email, and agree to be contacted.
+              </div>
+            )}
 
             <button
               onClick={submitLead}

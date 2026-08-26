@@ -1,14 +1,29 @@
 import { LocalSink } from './sink';
+import { ApiSink } from './apiSink';
 import { generateSeed } from './seed';
+import type { AnalyticsSink } from './sink';
 import type { AnalyticsEvent, EventType } from './types';
 
 export * from './types';
 export { aggregate, filterEvents, showDays, computeDeltas } from './aggregate';
 export { PRODUCTS } from './seed';
 
-const sink = new LocalSink();
-// Populate the demo dataset once; real kiosk sessions append to it.
-sink.seedIfEmpty(generateSeed());
+// Sink is chosen by environment. With no `VITE_API_URL` (the default, and the
+// Vercel preview) the kiosk stays local-only and demo-seeded — identical to the
+// merged demo. Set `VITE_API_URL` + `VITE_KIOSK_KEY` to route writes to a live
+// ingestion API instead; nothing above this line changes.
+const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
+const kioskKey = import.meta.env.VITE_KIOSK_KEY as string | undefined;
+
+let sink: AnalyticsSink;
+if (apiUrl && kioskKey) {
+  sink = new ApiSink(apiUrl, kioskKey);
+} else {
+  const local = new LocalSink();
+  // Populate the demo dataset once; real kiosk sessions append to it.
+  local.seedIfEmpty(generateSeed());
+  sink = local;
+}
 
 let seq = 0;
 function emit(type: EventType, sessionId: string, productId: string, payload?: Record<string, unknown>) {
@@ -21,7 +36,8 @@ export function allEvents(): AnalyticsEvent[] {
 }
 export function resetToSeed() {
   sink.clear();
-  sink.seedIfEmpty(generateSeed());
+  // Re-seeding is a demo affordance only meaningful for the local sink.
+  if (sink instanceof LocalSink) sink.seedIfEmpty(generateSeed());
 }
 
 // ---- Live session tracking (called by the kiosk store) ----
