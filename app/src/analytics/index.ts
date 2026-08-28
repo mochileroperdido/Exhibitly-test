@@ -8,15 +8,16 @@ export * from './types';
 export { aggregate, filterEvents, showDays, computeDeltas } from './aggregate';
 export { PRODUCTS } from './seed';
 
-// Sink is chosen by environment. With no `VITE_API_URL` (the default, and the
-// Vercel preview) the kiosk stays local-only and demo-seeded — identical to the
-// merged demo. Set `VITE_API_URL` + `VITE_KIOSK_KEY` to route writes to a live
-// ingestion API instead; nothing above this line changes.
-const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
+// Sink is chosen by environment. Live mode turns on when `VITE_KIOSK_KEY` is set
+// (the kiosk posts events to the ingestion API, same-origin `/api` by default, or
+// `VITE_API_URL` if given). With no kiosk key — the default, and the Vercel
+// preview — the kiosk stays local-only and demo-seeded, identical to the merged
+// demo. Nothing above this line changes between modes.
 const kioskKey = import.meta.env.VITE_KIOSK_KEY as string | undefined;
+const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) || '/api';
 
 let sink: AnalyticsSink;
-if (apiUrl && kioskKey) {
+if (kioskKey) {
   sink = new ApiSink(apiUrl, kioskKey);
 } else {
   const local = new LocalSink();
@@ -33,6 +34,10 @@ function emit(type: EventType, sessionId: string, productId: string, payload?: R
 
 export function allEvents(): AnalyticsEvent[] {
   return sink.all();
+}
+/** Current live session id (null between sessions) — links a lead to its session. */
+export function currentSessionId(): string | null {
+  return sessionId;
 }
 export function resetToSeed() {
   sink.clear();
@@ -69,9 +74,6 @@ export function closeHotspot() {
 }
 export function playVideo(title: string, completion?: number) {
   if (sessionId) emit('video_play', sessionId, curProduct, completion == null ? { title } : { title, completion });
-}
-export function captureLead(fields: { name: string; email: string; interest: string; explored: string[] }) {
-  if (sessionId) emit('lead_capture', sessionId, curProduct, fields);
 }
 export function endSession() {
   if (!sessionId) return;

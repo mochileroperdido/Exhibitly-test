@@ -1,11 +1,66 @@
 # Lathe — External setup checklist (founder actions)
 
-These are the accounts and settings **you** create outside the codebase so the
-PII/analytics backend can be wired up in the next PR. Nothing here blocks the
-current Vercel preview — the app runs fully as a local demo with none of it. Do
-them in roughly this order; each is free at pilot scale.
+These are the accounts and settings **you** create outside the codebase. The
+lower sections are the original one-time provisioning; the **Go-live** section
+directly below is what activates the live backend that ships in the
+live-backend PR. Nothing here blocks the demo — with no env vars, the app runs
+fully as a local demo.
 
 Legend: 🟢 do now to unblock the backend · 🟡 before the live show · ⚪ nice to have.
+
+---
+
+## 0. Go-live — activate the live backend 🟢
+
+Do these once (Cloudflare, Supabase project, and Vercel root = `app` are already
+done).
+
+**A. Apply the database schema.** In Supabase → **SQL Editor**, run the two files
+in order:
+1. `supabase/migrations/0001_init.sql` (tables + Row Level Security)
+2. `supabase/migrations/0002_seed_pilot.sql` (one org + show + kiosk; the kiosk
+   row already contains the sha256 of the kiosk key I gave you)
+
+**B. Set Vercel environment variables** (Project → Settings → Environment
+Variables → apply to Production + Preview). See `app/.env.example` for the full
+notes.
+
+| Name | Value | Exposed to browser? |
+|---|---|---|
+| `SUPABASE_URL` | `https://qrsswlwlirbkptqhpgtj.supabase.co` | No (server) |
+| `SUPABASE_SERVICE_ROLE_KEY` | your Supabase **secret / service_role** key | No (server) |
+| `VITE_SUPABASE_URL` | `https://qrsswlwlirbkptqhpgtj.supabase.co` | Yes |
+| `VITE_SUPABASE_ANON_KEY` | your Supabase **publishable / anon** key | Yes (safe, RLS-protected) |
+| `VITE_KIOSK_KEY` | the kiosk key I gave you (starts `kiosk_…`) | Yes (scoped, ingest-only) |
+
+> Data residency: the `/api` functions run on Vercel's **Edge runtime pinned to
+> `fra1` (Frankfurt)**, so lead PII is processed and stored in the EU. (Region
+> pinning is honored on Edge; if a function ever reports it can't pin region on
+> the Hobby plan, that's the one thing to revisit — data at rest stays EU
+> regardless because Supabase is in Frankfurt.)
+
+**C. Lock down Auth.** Supabase → **Authentication → Providers → Email**: keep
+magic link on, and turn **OFF** open sign-ups (Authentication → Settings →
+"Allow new users to sign up") so only invited addresses can log in. The built-in
+email sender is fine for you alone; add Resend SMTP later for more dashboard users.
+
+**D. First login → grant yourself access.** Open `https://<your-vercel-url>/#/insights`,
+sign in with your email via the magic link. Then in Supabase SQL Editor run
+(replace the email):
+
+```sql
+insert into org_members (org_id, user_id, role)
+select '11111111-1111-1111-1111-111111111111', id, 'owner'
+from auth.users where email = 'you@example.com'
+on conflict do nothing;
+```
+
+Reload the dashboard — you'll now see live data and **Export leads (CSV)**.
+
+**How to test it end to end:** open the kiosk (`https://<your-vercel-url>/`),
+explore a product, and submit a lead with the consent box ticked → the row
+appears in Supabase `leads` and the count shows on the dashboard. Toggle the
+tablet offline, submit another, reconnect → it flushes automatically (no loss).
 
 ---
 

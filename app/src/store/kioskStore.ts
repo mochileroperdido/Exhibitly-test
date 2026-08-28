@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { catalog } from '../data/catalog';
 import * as analytics from '../analytics';
+import { queueLead } from '../lib/leadClient';
 
 const hotspotTitle = (entryId: string, hotspotId: string) =>
   catalog.find((c) => c.id === entryId)?.hotspots.find((h) => h.id === hotspotId)?.title ?? hotspotId;
@@ -219,11 +220,20 @@ export const useKioskStore = create<KioskState>()(
           consentVersion: CONSENT_VERSION,
           videosViewed: videoTitles,
         };
-        analytics.captureLead({
+        // Lead PII goes ONLY to the leads store/endpoint — never into the
+        // anonymous analytics event stream. In live mode queueLead POSTs to
+        // /api/leads (offline-queued); in demo mode it's a no-op and the lead
+        // lives in the local `leads` array below.
+        queueLead({
           name: lead.name,
           email: lead.email,
-          interest: lead.interest,
+          interest: lead.interest || undefined,
           explored: [...hotspotTitles, ...videoTitles],
+          sessionId: analytics.currentSessionId() ?? undefined,
+          productKey: s.activeEntryId,
+          consentGiven: true,
+          consentText: CONSENT_TEXT,
+          consentVersion: CONSENT_VERSION,
         });
         set((prev) => ({ leads: [...prev.leads, lead], leadDone: true, leadError: false }));
       },

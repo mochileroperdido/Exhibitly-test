@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { Aggregates, Deltas } from '../analytics';
 import { TrafficBars } from './charts';
-import { showTip, hideTip } from './tip';
 
 const HOUR_MARKERS: Record<string, string> = { '2p': 'Product talk', '4p': 'Prize draw' };
 const INTEREST_COLORS = ['var(--blue)', 'var(--accent)', 'var(--aqua)'];
@@ -118,24 +117,14 @@ export function CommandDashboard({ agg, deltas }: { agg: Aggregates; deltas?: De
         </section>
       )}
 
-      <section className="ins-panel">
-        <div className="ins-phead"><div><h2>Captured leads</h2><div className="sub">{agg.leads.length} total · newest first · with what each explored</div></div></div>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="ins-table">
-            <thead><tr><th>Visitor</th><th>Interest</th><th>Explored</th><th>Captured</th></tr></thead>
-            <tbody>
-              {agg.leads.slice(0, 12).map((l, i) => (
-                <tr key={i}>
-                  <td className="ins-who"><b>{l.name}</b><small>{l.email}</small></td>
-                  <td><span className="ins-pill">{l.interest}</span></td>
-                  <td className="ins-exp" onPointerMove={(e) => showTip(e, l.explored.join(' · ') || '—')} onPointerLeave={hideTip}>
-                    {l.explored.slice(0, 3).join(' · ') || '—'}{l.explored.length > 3 ? ' …' : ''}
-                  </td>
-                  <td className="ins-tm">{new Date(l.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <section className="ins-panel ins-leads">
+        <div className="ins-phead"><div><h2>Captured leads</h2><div className="sub">Contact details stay off-screen — export the full list</div></div></div>
+        <div className="ins-leadsrow">
+          <div className="ins-num big"><span>{agg.leads.length}</span></div>
+          <p className="cap">
+            {agg.leads.length === 1 ? 'lead' : 'leads'} captured with consent. Name, email, interest, and what each
+            visitor explored are available via <b>Export leads (CSV)</b> in the toolbar.
+          </p>
         </div>
       </section>
     </>
