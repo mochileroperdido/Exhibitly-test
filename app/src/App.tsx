@@ -24,7 +24,7 @@ function useHash() {
 function surfaceForHost(host: string, hash: string): 'dashboard' | 'kiosk' {
   if (host.startsWith('dashboard.') || host.startsWith('app.')) return 'dashboard';
   if (host.startsWith('kiosk.')) return 'kiosk';
-  return hash.startsWith('#/insights') ? 'dashboard' : 'kiosk';
+  return hash.startsWith('#/insights') || hash.startsWith('#/e/') ? 'dashboard' : 'kiosk';
 }
 
 function App() {
