@@ -1,22 +1,67 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './insights.css';
-import { allEvents, aggregate, filterEvents, showDays, computeDeltas, PRODUCTS } from '../analytics';
+import type { Session } from '@supabase/supabase-js';
+import {
+  allEvents,
+  aggregate,
+  filterEvents,
+  showDays,
+  computeDeltas,
+  PRODUCTS,
+  type AnalyticsEvent,
+} from '../analytics';
+import { isSupabaseConfigured, getSupabase } from '../lib/supabase';
+import { loadInsights, type LeadRow } from './dataSource';
+import { downloadLeadsCsv } from './leadsExport';
+import { Login } from './Login';
 import { CommandDashboard } from './CommandDashboard';
 import { ReportView } from './ReportView';
-
-const SHOW_NAME = 'BuildTech Expo 2026';
 
 function fmtDay(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 export function InsightsApp() {
-  const events = useMemo(() => allEvents(), []);
-  const days = useMemo(() => showDays(events), [events]);
-  const productIds = Object.keys(PRODUCTS);
+  const live = isSupabaseConfigured;
 
   const prefersDark = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
   const [theme, setTheme] = useState<'dark' | 'light'>(prefersDark ? 'dark' : 'light');
+
+  // Auth — only relevant in live mode. `undefined` = still resolving.
+  const [session, setSession] = useState<Session | null | undefined>(live ? undefined : null);
+  useEffect(() => {
+    if (!live) return;
+    const db = getSupabase();
+    if (!db) return;
+    db.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = db.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => sub.subscription.unsubscribe();
+  }, [live]);
+
+  // Data — demo mode reads the local seed; live mode reads the DB once authed.
+  const [events, setEvents] = useState<AnalyticsEvent[]>(() => (live ? [] : allEvents()));
+  const [leads, setLeads] = useState<LeadRow[]>([]);
+  const [showName, setShowName] = useState('BuildTech Expo 2026');
+  const [loadErr, setLoadErr] = useState('');
+
+  useEffect(() => {
+    if (!live || !session) return;
+    let cancelled = false;
+    loadInsights()
+      .then((d) => {
+        if (cancelled) return;
+        setEvents(d.events);
+        setLeads(d.leads);
+        if (d.showName) setShowName(d.showName);
+      })
+      .catch((e) => !cancelled && setLoadErr(e?.message ?? 'Failed to load data'));
+    return () => {
+      cancelled = true;
+    };
+  }, [live, session]);
+
+  const days = useMemo(() => showDays(events), [events]);
+  const productIds = Object.keys(PRODUCTS);
   const [productId, setProductId] = useState('');
   const [day, setDay] = useState('');
   const [reportOpen, setReportOpen] = useState(false);
@@ -37,15 +82,28 @@ export function InsightsApp() {
 
   const productLabel = productId ? PRODUCTS[productId] : 'All products';
 
+  // Auth gates (live mode only).
+  if (live && session === undefined) {
+    return <div className="ins" data-theme={theme} style={{ minHeight: '100vh' }} />;
+  }
+  if (live && session === null) {
+    return <Login theme={theme} />;
+  }
+
+  const exportLeads = () => {
+    if (live) downloadLeadsCsv(leads, `${showName.replace(/\s+/g, '-').toLowerCase()}-leads.csv`);
+  };
+  const signOut = () => getSupabase()?.auth.signOut();
+
   return (
     <div className="ins" data-theme={theme}>
       <div className="ins-wrap">
         <div className="ins-top">
           <div className="ins-brand">
-            <div className="ins-mk">E</div>
+            <div className="ins-mk">L</div>
             <div>
-              <h1>Exhibly Insights</h1>
-              <div className="meta">{SHOW_NAME.toUpperCase()} · BOOTH 214 · {productLabel.toUpperCase()}</div>
+              <h1>Lathe Insights</h1>
+              <div className="meta">{showName.toUpperCase()} · {productLabel.toUpperCase()}</div>
             </div>
           </div>
 
@@ -74,15 +132,22 @@ export function InsightsApp() {
               )}
             </button>
 
+            {live && <button className="ins-btn" onClick={exportLeads}>Export leads (CSV)</button>}
             <button className="ins-btn primary" onClick={() => setReportOpen(true)}>Generate report</button>
-            <a className="ins-btn" href="#" onClick={(e) => { e.preventDefault(); location.hash = ''; }}>Back to display</a>
+            {live ? (
+              <button className="ins-btn" onClick={signOut}>Sign out</button>
+            ) : (
+              <a className="ins-btn" href="#" onClick={(e) => { e.preventDefault(); location.hash = ''; }}>Back to display</a>
+            )}
           </div>
         </div>
+
+        {loadErr && <div className="ins-panel" style={{ marginBottom: 14, color: 'var(--bad, #c0341d)' }}>{loadErr}</div>}
 
         <CommandDashboard agg={agg} deltas={deltas} />
       </div>
 
-      {reportOpen && <ReportView agg={agg} showName={SHOW_NAME} period={`${productLabel} · ${period}`} onClose={() => setReportOpen(false)} />}
+      {reportOpen && <ReportView agg={agg} showName={showName} period={`${productLabel} · ${period}`} onClose={() => setReportOpen(false)} />}
       <div className="ins-tip" id="ins-tip" />
     </div>
   );

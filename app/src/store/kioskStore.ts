@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { catalog } from '../data/catalog';
 import * as analytics from '../analytics';
+import { queueLead } from '../lib/leadClient';
 
 const hotspotTitle = (entryId: string, hotspotId: string) =>
   catalog.find((c) => c.id === entryId)?.hotspots.find((h) => h.id === hotspotId)?.title ?? hotspotId;
@@ -9,6 +10,12 @@ const mediaTitle = (entryId: string, mediaId: string) =>
   catalog.find((c) => c.id === entryId)?.media.find((m) => m.id === mediaId)?.title ?? mediaId;
 
 export type Mode = 'attract' | 'explore';
+
+// GDPR consent captured with every lead. Bump the version when the wording
+// changes so each stored record proves exactly what the visitor agreed to.
+export const CONSENT_VERSION = '2026-08-1';
+export const CONSENT_TEXT =
+  'I agree that my details may be shared with this exhibitor to follow up about their products.';
 
 export interface Lead {
   id: string;
@@ -18,6 +25,9 @@ export interface Lead {
   createdAt: string;
   variantViewed: string;
   hotspotsViewed: string[];
+  consentGiven: boolean;
+  consentText: string;
+  consentVersion: string;
   videosViewed: string[];
 }
 
@@ -36,6 +46,7 @@ interface KioskState {
   leadName: string;
   leadEmail: string;
   leadInterest: string;
+  leadConsent: boolean;
   leadsViewOpen: boolean;
   sessionHotspotsViewed: string[];
   sessionMediaViewed: string[];
@@ -57,6 +68,7 @@ interface KioskState {
   openLead: () => void;
   closeLead: () => void;
   setLeadField: (field: 'leadName' | 'leadEmail' | 'leadInterest', value: string) => void;
+  setLeadConsent: (v: boolean) => void;
   submitLead: () => void;
   toggleLeadsView: () => void;
   clearLeads: () => void;
@@ -82,6 +94,7 @@ export const useKioskStore = create<KioskState>()(
       leadName: '',
       leadEmail: '',
       leadInterest: '',
+      leadConsent: false,
       leadsViewOpen: false,
       sessionHotspotsViewed: [],
       sessionMediaViewed: [],
@@ -111,6 +124,7 @@ export const useKioskStore = create<KioskState>()(
           leadName: '',
           leadEmail: '',
           leadInterest: '',
+          leadConsent: false,
           sessionHotspotsViewed: [],
           sessionMediaViewed: [],
         });
@@ -165,13 +179,24 @@ export const useKioskStore = create<KioskState>()(
 
       openLead: () => set({ leadOpen: true, leadDone: false, leadError: false }),
       closeLead: () =>
-        set({ leadOpen: false, leadDone: false, leadError: false, leadName: '', leadEmail: '', leadInterest: '' }),
+        set({
+          leadOpen: false,
+          leadDone: false,
+          leadError: false,
+          leadName: '',
+          leadEmail: '',
+          leadInterest: '',
+          leadConsent: false,
+        }),
 
       setLeadField: (field, value) => set({ [field]: value } as Partial<KioskState>),
+      setLeadConsent: (v) => set({ leadConsent: v }),
 
       submitLead: () => {
         const s = get();
-        if (!s.leadName.trim() || !s.leadEmail.trim()) {
+        // Consent is a hard gate: no lead PII is stored without an explicit,
+        // recorded opt-in (GDPR lawful basis). Name + email are also required.
+        if (!s.leadName.trim() || !s.leadEmail.trim() || !s.leadConsent) {
           set({ leadError: true });
           return;
         }
@@ -190,13 +215,25 @@ export const useKioskStore = create<KioskState>()(
           createdAt: new Date().toISOString(),
           variantViewed: entry?.label ?? s.activeEntryId,
           hotspotsViewed: hotspotTitles,
+          consentGiven: true,
+          consentText: CONSENT_TEXT,
+          consentVersion: CONSENT_VERSION,
           videosViewed: videoTitles,
         };
-        analytics.captureLead({
+        // Lead PII goes ONLY to the leads store/endpoint — never into the
+        // anonymous analytics event stream. In live mode queueLead POSTs to
+        // /api/leads (offline-queued); in demo mode it's a no-op and the lead
+        // lives in the local `leads` array below.
+        queueLead({
           name: lead.name,
           email: lead.email,
-          interest: lead.interest,
+          interest: lead.interest || undefined,
           explored: [...hotspotTitles, ...videoTitles],
+          sessionId: analytics.currentSessionId() ?? undefined,
+          productKey: s.activeEntryId,
+          consentGiven: true,
+          consentText: CONSENT_TEXT,
+          consentVersion: CONSENT_VERSION,
         });
         set((prev) => ({ leads: [...prev.leads, lead], leadDone: true, leadError: false }));
       },

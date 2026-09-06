@@ -1,14 +1,30 @@
 import { LocalSink } from './sink';
+import { ApiSink } from './apiSink';
 import { generateSeed } from './seed';
+import type { AnalyticsSink } from './sink';
 import type { AnalyticsEvent, EventType } from './types';
 
 export * from './types';
 export { aggregate, filterEvents, showDays, computeDeltas } from './aggregate';
 export { PRODUCTS } from './seed';
 
-const sink = new LocalSink();
-// Populate the demo dataset once; real kiosk sessions append to it.
-sink.seedIfEmpty(generateSeed());
+// Sink is chosen by environment. Live mode turns on when `VITE_KIOSK_KEY` is set
+// (the kiosk posts events to the ingestion API, same-origin `/api` by default, or
+// `VITE_API_URL` if given). With no kiosk key — the default, and the Vercel
+// preview — the kiosk stays local-only and demo-seeded, identical to the merged
+// demo. Nothing above this line changes between modes.
+const kioskKey = import.meta.env.VITE_KIOSK_KEY as string | undefined;
+const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) || '/api';
+
+let sink: AnalyticsSink;
+if (kioskKey) {
+  sink = new ApiSink(apiUrl, kioskKey);
+} else {
+  const local = new LocalSink();
+  // Populate the demo dataset once; real kiosk sessions append to it.
+  local.seedIfEmpty(generateSeed());
+  sink = local;
+}
 
 let seq = 0;
 function emit(type: EventType, sessionId: string, productId: string, payload?: Record<string, unknown>) {
@@ -19,9 +35,14 @@ function emit(type: EventType, sessionId: string, productId: string, payload?: R
 export function allEvents(): AnalyticsEvent[] {
   return sink.all();
 }
+/** Current live session id (null between sessions) — links a lead to its session. */
+export function currentSessionId(): string | null {
+  return sessionId;
+}
 export function resetToSeed() {
   sink.clear();
-  sink.seedIfEmpty(generateSeed());
+  // Re-seeding is a demo affordance only meaningful for the local sink.
+  if (sink instanceof LocalSink) sink.seedIfEmpty(generateSeed());
 }
 
 // ---- Live session tracking (called by the kiosk store) ----
@@ -53,9 +74,6 @@ export function closeHotspot() {
 }
 export function playVideo(title: string, completion?: number) {
   if (sessionId) emit('video_play', sessionId, curProduct, completion == null ? { title } : { title, completion });
-}
-export function captureLead(fields: { name: string; email: string; interest: string; explored: string[] }) {
-  if (sessionId) emit('lead_capture', sessionId, curProduct, fields);
 }
 export function endSession() {
   if (!sessionId) return;
