@@ -6,7 +6,9 @@
 // Live only when VITE_KIOSK_KEY is set; otherwise this is a no-op and leads live
 // only in the local store (demo/preview behaviour is unchanged).
 
-const KIOSK_KEY = import.meta.env.VITE_KIOSK_KEY as string | undefined;
+import { getKioskKey } from './kioskKey';
+
+const KIOSK_KEY = getKioskKey();
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || '/api';
 const QUEUE_KEY = 'lathe-lead-queue';
 

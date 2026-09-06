@@ -1,6 +1,7 @@
 import { LocalSink } from './sink';
 import { ApiSink } from './apiSink';
 import { generateSeed } from './seed';
+import { getKioskKey } from '../lib/kioskKey';
 import type { AnalyticsSink } from './sink';
 import type { AnalyticsEvent, EventType } from './types';
 
@@ -8,12 +9,13 @@ export * from './types';
 export { aggregate, filterEvents, showDays, computeDeltas } from './aggregate';
 export { PRODUCTS } from './seed';
 
-// Sink is chosen by environment. Live mode turns on when `VITE_KIOSK_KEY` is set
-// (the kiosk posts events to the ingestion API, same-origin `/api` by default, or
-// `VITE_API_URL` if given). With no kiosk key — the default, and the Vercel
-// preview — the kiosk stays local-only and demo-seeded, identical to the merged
-// demo. Nothing above this line changes between modes.
-const kioskKey = import.meta.env.VITE_KIOSK_KEY as string | undefined;
+// Sink is chosen by environment. Live mode turns on when a kiosk key is present
+// (from the tablet's link ?k=, a stored token, or the build-time VITE_KIOSK_KEY —
+// see lib/kioskKey). The kiosk posts events to the ingestion API, same-origin
+// `/api` by default, or `VITE_API_URL` if given. With no kiosk key — the default,
+// and the Vercel preview — the kiosk stays local-only and demo-seeded, identical
+// to the merged demo. Nothing above this line changes between modes.
+const kioskKey = getKioskKey();
 const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) || '/api';
 
 let sink: AnalyticsSink;

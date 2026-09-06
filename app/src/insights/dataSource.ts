@@ -23,7 +23,6 @@ export interface LeadRow {
 export interface InsightsData {
   events: AnalyticsEvent[];
   leads: LeadRow[];
-  showName: string;
 }
 
 interface EventRow {
@@ -35,24 +34,33 @@ interface EventRow {
   payload: Record<string, unknown> | null;
 }
 
-export async function loadInsights(): Promise<InsightsData> {
+export async function loadInsights(showId: string, kioskId?: string): Promise<InsightsData> {
   const db = getSupabase();
-  if (!db) return { events: [], leads: [], showName: '' };
+  if (!db || !showId) return { events: [], leads: [] };
 
-  const [{ data: eventRows, error: eErr }, { data: leadRows, error: lErr }, { data: showRows }] =
-    await Promise.all([
-      db.from('events').select('id,type,ts,client_session_id,product_key,payload').order('ts'),
-      db
-        .from('leads')
-        .select('id,name,email,interest,explored,product_key,client_session_id,captured_at')
-        .order('captured_at', { ascending: false }),
-      db.from('shows').select('name').limit(1),
-    ]);
+  let eventsQ = db
+    .from('events')
+    .select('id,type,ts,client_session_id,product_key,payload')
+    .eq('show_id', showId)
+    .order('ts');
+  let leadsQ = db
+    .from('leads')
+    .select('id,name,email,interest,explored,product_key,client_session_id,captured_at')
+    .eq('show_id', showId)
+    .order('captured_at', { ascending: false });
+  if (kioskId) {
+    eventsQ = eventsQ.eq('kiosk_id', kioskId);
+    leadsQ = leadsQ.eq('kiosk_id', kioskId);
+  }
+
+  const [{ data: eventRows, error: eErr }, { data: leadRows, error: lErr }] = await Promise.all([
+    eventsQ,
+    leadsQ,
+  ]);
   if (eErr) throw eErr;
   if (lErr) throw lErr;
 
   const leads = (leadRows ?? []) as LeadRow[];
-  const showName = (showRows?.[0]?.name as string | undefined) ?? 'Your show';
 
   const events: AnalyticsEvent[] = (eventRows ?? []).map((r: EventRow) => ({
     id: r.id,
@@ -80,5 +88,5 @@ export async function loadInsights(): Promise<InsightsData> {
     });
   }
 
-  return { events, leads, showName };
+  return { events, leads };
 }

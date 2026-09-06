@@ -169,3 +169,15 @@
 .ins-leads .ins-num.big span { color: var(--accent); }
 .ins-leads .cap { font-size: 15px; color: var(--ink-2); max-width: 52ch; line-height: 1.5; margin: 0; }
 .ins-leads .cap b { color: var(--ink); font-weight: 700; }
+
+/* v2 — shows / tablets management */
+.ins-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 70; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }
+.ins-modal { width: min(460px, 94vw); background: var(--panel); border: 1px solid var(--edge-2); border-radius: 14px; padding: 22px 22px 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+.ins-drawer { width: min(560px, 96vw); background: var(--panel); border: 1px solid var(--edge-2); border-radius: 14px; padding: 20px 22px 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+.ins-field { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 9px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--edge-2); border-radius: 9px; }
+.ins-field:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ins-linkrow { display: flex; gap: 8px; align-items: center; }
+.ins-linkrow .ins-field { margin-top: 0; }
+.ins-tablet { border: 1px solid var(--edge); border-radius: 11px; padding: 12px 14px; margin-top: 12px; background: var(--panel-2); }
+.ins-tabletbody { display: flex; gap: 14px; align-items: center; margin-top: 10px; }
+@media (max-width: 520px) { .ins-tabletbody { flex-direction: column; align-items: stretch; } }

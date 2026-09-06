@@ -10,7 +10,7 @@ function fmtTime(ms: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-export function CommandDashboard({ agg, deltas }: { agg: Aggregates; deltas?: Deltas }) {
+export function CommandDashboard({ agg, deltas, onExportLeads }: { agg: Aggregates; deltas?: Deltas; onExportLeads?: () => void }) {
   const [mode, setMode] = useState<'hour' | 'day'>('hour');
   const k = agg.kpis;
   const traffic = mode === 'hour' ? agg.traffic.hour : agg.traffic.day;
@@ -118,7 +118,10 @@ export function CommandDashboard({ agg, deltas }: { agg: Aggregates; deltas?: De
       )}
 
       <section className="ins-panel ins-leads">
-        <div className="ins-phead"><div><h2>Captured leads</h2><div className="sub">Contact details stay off-screen — export the full list</div></div></div>
+        <div className="ins-phead">
+          <div><h2>Captured leads</h2><div className="sub">Contact details stay off-screen — export the full list</div></div>
+          {onExportLeads && <button className="ins-btn" onClick={onExportLeads}>Export leads (CSV)</button>}
+        </div>
         <div className="ins-leadsrow">
           <div className="ins-num big"><span>{agg.leads.length}</span></div>
           <p className="cap">
