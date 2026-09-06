@@ -16,9 +16,20 @@ function useHash() {
   return hash;
 }
 
+// One build serves both surfaces; the hostname decides which. A `dashboard.` /
+// `app.` host is always the dashboard; a `kiosk.` host is always the kiosk and
+// refuses the dashboard route entirely, so a shared booth tablet can never reach
+// the login. Any other host (Vercel previews, the apex) falls back to the hash
+// route so `#/insights` keeps working for local dev and preview testing.
+function surfaceForHost(host: string, hash: string): 'dashboard' | 'kiosk' {
+  if (host.startsWith('dashboard.') || host.startsWith('app.')) return 'dashboard';
+  if (host.startsWith('kiosk.')) return 'kiosk';
+  return hash.startsWith('#/insights') ? 'dashboard' : 'kiosk';
+}
+
 function App() {
   const hash = useHash();
-  if (hash.startsWith('#/insights')) {
+  if (surfaceForHost(window.location.hostname, hash) === 'dashboard') {
     return (
       <Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#0b0d12' }} />}>
         <InsightsApp />
