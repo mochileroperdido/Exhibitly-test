@@ -265,3 +265,11 @@
 .ins-actions { display: flex; align-items: center; gap: 8px; }
 
 .ins-tablet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+/* Tablet rows on a single line; QR moved to a popup */
+.ins-tablet-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.ins-tablet-row .ins-field { flex: 1; min-width: 0; margin-top: 0; }
+.ins-tablet-row .ins-btn { white-space: nowrap; }
+/* Prevent rubber-band overscroll from revealing the layer behind the fixed app
+   (the "background color change" seen at the top/bottom of the events page). */
+.ins { overscroll-behavior: none; }

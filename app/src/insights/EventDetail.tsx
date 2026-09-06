@@ -58,13 +58,13 @@ export function EventDetail({ showId, onBack }: { showId: string; onBack: () => 
 
       <div className="ins-tabs" role="tablist">
         <button role="tab" aria-selected={tab === 'insights'} className={tab === 'insights' ? 'active' : ''} onClick={() => setTab('insights')}>Insights</button>
-        <button role="tab" aria-selected={tab === 'tablets'} className={tab === 'tablets' ? 'active' : ''} onClick={() => setTab('tablets')}>Tablets{kiosks.length ? ` · ${kiosks.length}` : ''}</button>
+        <button role="tab" aria-selected={tab === 'tablets'} className={tab === 'tablets' ? 'active' : ''} onClick={() => setTab('tablets')}>Tablets</button>
       </div>
 
       {err && <div className="ins-panel" style={{ color: 'var(--bad, #c0341d)', marginBottom: 12 }}>{err}</div>}
 
       {tab === 'tablets' ? (
-        <TabletsTab showId={showId} />
+        <TabletsTab showId={showId} eventName={name} />
       ) : (
         <>
           <div className="ins-filterbar">
