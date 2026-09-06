@@ -66,6 +66,24 @@ export async function listShows(): Promise<Show[]> {
   return (data ?? []) as Show[];
 }
 
+export async function getShow(id: string): Promise<Show | null> {
+  const db = getSupabase();
+  if (!db) return null;
+  const { data } = await db.from('shows').select('id,name,starts_on,ends_on').eq('id', id).maybeSingle();
+  return (data as Show) ?? null;
+}
+
+/** Headline counts for an event card: total leads + sessions. */
+export async function eventStats(showId: string): Promise<{ leads: number; sessions: number }> {
+  const db = getSupabase();
+  if (!db) return { leads: 0, sessions: 0 };
+  const [{ count: leads }, { count: sessions }] = await Promise.all([
+    db.from('leads').select('*', { count: 'exact', head: true }).eq('show_id', showId),
+    db.from('events').select('*', { count: 'exact', head: true }).eq('show_id', showId).eq('type', 'session_start'),
+  ]);
+  return { leads: leads ?? 0, sessions: sessions ?? 0 };
+}
+
 export async function listKiosks(showId: string): Promise<Kiosk[]> {
   const db = getSupabase();
   if (!db) return [];
