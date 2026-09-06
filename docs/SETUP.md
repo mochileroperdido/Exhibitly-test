@@ -62,6 +62,23 @@ explore a product, and submit a lead with the consent box ticked → the row
 appears in Supabase `leads` and the count shows on the dashboard. Toggle the
 tablet offline, submit another, reconnect → it flushes automatically (no loss).
 
+### Dashboard v2 — shows + per-tablet links
+
+Run **`supabase/migrations/0003_dashboard.sql`** (grants the dashboard read access
+— fixes "permission denied for table events" — and adds show/tablet management).
+Then in the dashboard:
+
+1. **New show** → name (+ optional dates). It auto-creates the first tablet.
+2. **Tablets & links** → copy a tablet's link or show its QR. Open that link (or
+   scan the QR) on a booth device — it binds that tablet to the show, and
+   everything it captures is attributed there. **Add tablet** for more; **Revoke**
+   disables one.
+3. The **show selector** and **tablet filter** at the top scope the insights;
+   leads/analytics roll up per show (or per tablet).
+
+The original single `VITE_KIOSK_KEY` still works as a fallback tablet, so nothing
+breaks if a device opens the kiosk with no `?k=` link.
+
 ---
 
 ## 1. Domain — meetlathe.com 🟢
