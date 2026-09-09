@@ -25,20 +25,23 @@ Companion docs: `lathe-prd.md`, `lathe-srs.md`.
 | Audience | Booth visitors | Exhibitor / Lathe team |
 | Mode | Full-screen, immersive, no login | Windowed app, authenticated |
 | Nav | Implicit (attract → explore → lead) | Vercel-style: Events → Event detail (tabs) |
-| Fonts | Saira Condensed (display), IBM Plex Sans/Mono | **Inter** (UI) + IBM Plex Mono (figures) |
+| Fonts | Saira Condensed (display) + **Inter** (body) + IBM Plex Mono (data) | **Inter** (UI) + IBM Plex Mono (figures) |
 
 ## 3. Typography
 
-The dashboard was consolidated from six families to **two** to remove an
-"unpolished / AI-generated" feel:
+The brand runs on **three typefaces** total (a display + body + mono trio):
 
-- **Inter** — all dashboard UI text (weights 400/500/600/700).
-- **IBM Plex Mono** — numeric KPIs, small labels, tabular figures only.
-- Base 16px, line-height ~1.5, `font-variant-numeric: tabular-nums` for figures,
-  tight tracking on large numbers/headings.
+- **Saira Condensed** — display / wordmark / kiosk headlines (the industrial "tool"
+  character). Kiosk only.
+- **Inter** — all **body & UI** text on **both** surfaces (weights 400/500/600/700).
+- **IBM Plex Mono** — numeric KPIs, data, small labels, tabular figures only.
 
-The kiosk keeps its own identity: **Saira Condensed** (display/wordmark), **IBM Plex
-Sans** (body), **IBM Plex Mono** (labels).
+So the **dashboard** uses two faces (Inter + Plex Mono) — the earlier consolidation
+that removed the "AI slop" feel — and the **kiosk** adds Saira Condensed for
+display, sharing Inter for body. (The kiosk previously used IBM Plex Sans for body;
+it now uses Inter so the whole product is one coherent 3-font system, not four.)
+Base 16px, line-height ~1.5, `font-variant-numeric: tabular-nums` for figures,
+tight tracking on large numbers/headings.
 
 ## 4. Color system (dashboard tokens)
 
