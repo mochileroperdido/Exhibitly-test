@@ -2,7 +2,7 @@
 
 @theme {
   --font-display: 'Saira Condensed', sans-serif;
-  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 
   --color-mist: #f2f1ee;
