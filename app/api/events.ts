@@ -8,7 +8,7 @@ export const config = { runtime: 'edge', regions: ['fra1'] };
 
 const EventSchema = z.object({
   id: z.string().max(64),
-  type: z.enum(['session_start', 'product_view', 'hotspot_open', 'video_play', 'session_end']),
+  type: z.enum(['session_start', 'product_view', 'hotspot_open', 'video_play', 'video_complete', 'session_end']),
   ts: z.number().int().nonnegative(),
   sessionId: z.string().max(64),
   productId: z.string().max(64).optional().default(''),
@@ -37,13 +37,19 @@ export default async function handler(req: Request): Promise<Response> {
     org_id: kiosk.org_id,
     show_id: kiosk.show_id,
     kiosk_id: kiosk.id,
+    client_id: e.id,
     client_session_id: e.sessionId,
     product_key: e.productId || null,
     type: e.type,
     payload: e.payload ?? {},
     ts: new Date(e.ts).toISOString(),
   }));
-  const { error } = await db.from('events').insert(rows);
+  // Idempotent write: a client retry after a lost 2xx would otherwise
+  // duplicate rows. The (kiosk_id, client_id) unique index — see migration
+  // 0005 — lets us swallow re-posts safely.
+  const { error } = await db
+    .from('events')
+    .upsert(rows, { onConflict: 'kiosk_id,client_id', ignoreDuplicates: true });
   if (error) return jsonResponse(500, { error: 'write_failed' });
 
   return jsonResponse(202, { ok: true, accepted: rows.length });

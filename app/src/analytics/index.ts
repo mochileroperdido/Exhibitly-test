@@ -21,6 +21,20 @@ const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) || '/api';
 let sink: AnalyticsSink;
 if (kioskKey) {
   sink = new ApiSink(apiUrl, kioskKey);
+  // Lifecycle-driven flushes so a session's events reach the dashboard even
+  // if the tab is backgrounded, the tablet goes to sleep, or the network
+  // was down until now. Each is a best-effort drain — the ApiSink also
+  // interval-flushes and posts with keepalive:true for pagehide safety.
+  if (typeof window !== 'undefined') {
+    const flush = () => {
+      void sink.flush();
+    };
+    window.addEventListener('pagehide', flush);
+    window.addEventListener('online', flush);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush();
+    });
+  }
 } else {
   const local = new LocalSink();
   // Populate the demo dataset once; real kiosk sessions append to it.
@@ -83,9 +97,16 @@ export function closeHotspot() {
 export function playVideo(title: string, completion?: number) {
   if (sessionId) emit('video_play', sessionId, curProduct, completion == null ? { title } : { title, completion });
 }
+export function videoComplete(title: string) {
+  if (sessionId) emit('video_complete', sessionId, curProduct, { title, completion: 1 });
+}
 export function endSession() {
   if (!sessionId) return;
   closeHotspot();
   emit('session_end', sessionId, curProduct, { durationMs: Date.now() - sessionStart });
   sessionId = null;
+  // Return-to-attract is the natural end of a visitor's engagement; drain the
+  // queue now so the dashboard sees the completed session within seconds
+  // rather than waiting for the next interval flush.
+  void sink.flush();
 }

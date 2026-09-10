@@ -8,6 +8,7 @@ export type EventType =
   | 'product_view'
   | 'hotspot_open'
   | 'video_play'
+  | 'video_complete'
   | 'lead_capture';
 
 export interface AnalyticsEvent {

@@ -6,8 +6,6 @@ import { queueLead } from '../lib/leadClient';
 
 const hotspotTitle = (entryId: string, hotspotId: string) =>
   catalog.find((c) => c.id === entryId)?.hotspots.find((h) => h.id === hotspotId)?.title ?? hotspotId;
-const mediaTitle = (entryId: string, mediaId: string) =>
-  catalog.find((c) => c.id === entryId)?.media.find((m) => m.id === mediaId)?.title ?? mediaId;
 
 export type Mode = 'attract' | 'explore';
 
@@ -149,8 +147,12 @@ export const useKioskStore = create<KioskState>()(
         const willOpen = s.activeHotspotId === id ? null : id;
         if (willOpen) analytics.openHotspot(hotspotTitle(s.activeEntryId, willOpen));
         else analytics.closeHotspot();
+        // Opening a hotspot dismisses the product overview so the two cards
+        // never fight for screen space; closing the hotspot leaves the
+        // overview closed (the user can re-open it from the dock).
         set({
           activeHotspotId: willOpen,
+          overviewOpen: willOpen ? false : s.overviewOpen,
           sessionHotspotsViewed:
             id && !s.sessionHotspotsViewed.includes(id)
               ? [...s.sessionHotspotsViewed, id]
@@ -167,8 +169,10 @@ export const useKioskStore = create<KioskState>()(
 
       openMedia: () => set({ mediaOpen: true, activeMediaId: null }),
       closeMedia: () => set({ mediaOpen: false, activeMediaId: null }),
+      // Tracking now lives on the <video> element itself (see MediaGallery):
+      // `video_play` fires on real playback start, `video_complete` on ended.
+      // Selecting a thumbnail is just intent, so it no longer emits.
       selectMedia: (id) => {
-        analytics.playVideo(mediaTitle(get().activeEntryId, id));
         set((s) => ({
           activeMediaId: id,
           sessionMediaViewed: s.sessionMediaViewed.includes(id)
