@@ -59,6 +59,12 @@ export function startSession(productId: string) {
   curProduct = productId;
   emit('session_start', sessionId, productId);
   emit('product_view', sessionId, productId);
+  // Flush shortly after wake-up so the first session shows up on the dashboard
+  // within seconds instead of waiting for the interval flush or tab close.
+  // (Regular interval / pagehide / reconnect flushes are unchanged.)
+  setTimeout(() => {
+    void sink.flush();
+  }, 1500);
 }
 export function viewProduct(productId: string) {
   curProduct = productId;
