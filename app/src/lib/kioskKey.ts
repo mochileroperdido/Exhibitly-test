@@ -22,6 +22,7 @@ function readParamToken(): string | null {
 }
 
 let resolved: string | undefined;
+let cameFromLink = false;
 
 export function getKioskKey(): string | undefined {
   if (resolved !== undefined) return resolved || undefined;
@@ -31,6 +32,7 @@ export function getKioskKey(): string | undefined {
     token = readParamToken();
     if (token) {
       localStorage.setItem(STORE_KEY, token);
+      cameFromLink = true;
     } else {
       token = localStorage.getItem(STORE_KEY);
     }
@@ -40,4 +42,20 @@ export function getKioskKey(): string | undefined {
 
   resolved = token || (import.meta.env.VITE_KIOSK_KEY as string | undefined) || '';
   return resolved || undefined;
+}
+
+/** True when this page load captured a token from `?k=` (a fresh tablet setup). */
+export function boundFromLink(): boolean {
+  return cameFromLink;
+}
+
+/** Wipe the stored tablet identity — used by "Unbind tablet" recovery in the UI. */
+export function clearKioskKey(): void {
+  try {
+    localStorage.removeItem(STORE_KEY);
+  } catch {
+    /* ignore */
+  }
+  resolved = undefined;
+  cameFromLink = false;
 }

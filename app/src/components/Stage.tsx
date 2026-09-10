@@ -15,6 +15,7 @@ import { MediaGallery } from './MediaGallery';
 import { LeadCapturePill, LeadCaptureForm } from './LeadCapture';
 import { LeadsDebugView } from './LeadsDebugView';
 import { Watermark } from './Watermark';
+import { BindNotice } from './BindNotice';
 
 // Field-of-view bounds (degrees) for the zoom controls; reset returns to
 // model-viewer's own auto framing.
@@ -248,6 +249,7 @@ export function Stage() {
       )}
 
       <Watermark />
+      <BindNotice />
     </div>
   );
 }

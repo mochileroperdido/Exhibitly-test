@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Exhibly Kiosk',
-        short_name: 'Exhibly',
+        name: 'Lathe Kiosk',
+        short_name: 'Lathe',
         description: 'Interactive 3D product kiosk',
         theme_color: '#f2f1ee',
         background_color: '#f2f1ee',
