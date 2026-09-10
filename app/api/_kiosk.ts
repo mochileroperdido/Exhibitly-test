@@ -30,7 +30,7 @@ export interface KioskRow {
 
 export type ResolveResult =
   | { ok: true; kiosk: KioskRow }
-  | { ok: false; status: 401 | 500; error: string };
+  | { ok: false; status: 401 | 500; error: string; detail?: string };
 
 /**
  * Resolve the tablet identity from its scoped ingest key.
@@ -47,7 +47,7 @@ export async function resolveKiosk(db: SupabaseClient, key: string | null): Prom
     .eq('key_hash', await sha256Hex(key))
     .eq('active', true)
     .maybeSingle();
-  if (error) return { ok: false, status: 500, error: 'db_error' };
+  if (error) return { ok: false, status: 500, error: 'db_error', detail: error.message };
   if (!data) return { ok: false, status: 401, error: 'unauthorized' };
   return { ok: true, kiosk: data as KioskRow };
 }

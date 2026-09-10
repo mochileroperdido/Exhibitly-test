@@ -35,12 +35,24 @@ export function BindNotice() {
           const data = (await res.json()) as { event?: string; tablet?: string };
           setState({ kind: 'ok', event: data.event || 'this event', tablet: data.tablet || 'this tablet' });
         } else {
-          const msg =
-            res.status === 401
-              ? 'This tablet link is invalid or was revoked.'
-              : res.status === 500
-                ? "Server can't reach the database — check Vercel env vars (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)."
-                : `Setup check failed (HTTP ${res.status}).`;
+          const body = (await res.json().catch(() => ({}))) as {
+            detail?: string;
+            env?: { urlHost?: string; keyFormat?: string };
+          };
+          let msg: string;
+          if (res.status === 401) {
+            msg = 'This tablet link is invalid or was revoked.';
+          } else if (res.status === 500) {
+            const parts = [
+              "Server can't reach the database.",
+              body.detail ? `Supabase said: "${body.detail}".` : null,
+              body.env?.urlHost ? `SUPABASE_URL host: ${body.env.urlHost}.` : null,
+              body.env?.keyFormat ? `SERVICE_ROLE_KEY format: ${body.env.keyFormat}.` : null,
+            ].filter(Boolean);
+            msg = parts.join(' ');
+          } else {
+            msg = `Setup check failed (HTTP ${res.status}).`;
+          }
           setState({ kind: 'err', message: msg });
         }
       } catch (e) {
