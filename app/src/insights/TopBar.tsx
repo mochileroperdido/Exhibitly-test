@@ -17,8 +17,15 @@ export function TopBar({
   return (
     <header className="ins-topbar">
       <button className="ins-logo" onClick={onHome} aria-label="Lathe — all events">
-        <span className="ins-mk">L</span>
-        <span className="ins-logo-name">Lathe</span>
+        <img
+          className="ins-wordmark"
+          src={
+            theme === 'dark'
+              ? '/brand/logos/svg/lathe-wordmark-light.svg'
+              : '/brand/logos/svg/lathe-wordmark-ink.svg'
+          }
+          alt="Lathe"
+        />
       </button>
       <div className="ins-topbar-right">
         <button className="ins-iconbtn" aria-label="Toggle theme" onClick={onToggleTheme}>

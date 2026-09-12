@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./brand/lathe-colors.css";
 
 @theme {
   --font-display: 'Saira Condensed', sans-serif;

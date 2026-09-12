@@ -23,16 +23,37 @@ export function Login({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     // On success, onAuthStateChange in InsightsApp swaps in the dashboard.
   };
 
+  // First-touch surface: the README allows the tagline lockup here. The
+  // shipped SVG lockup renders correctly for the wordmark half but glyphs
+  // in the tagline path can be brittle at small sizes, so we render the
+  // wordmark from SVG and set the tagline in Saira Condensed (already
+  // loaded via app/index.html) so type stays crisp at any width.
+  const wordmarkSrc =
+    theme === 'dark'
+      ? '/brand/logos/svg/lathe-wordmark-light.svg'
+      : '/brand/logos/svg/lathe-wordmark-ink.svg';
+
   return (
     <div className="ins" data-theme={theme} style={{ display: 'grid', placeItems: 'center', minHeight: '100vh' }}>
       <div className="ins-panel" style={{ width: 'min(400px, 92vw)', padding: 28 }}>
-        <div className="ins-brand" style={{ marginBottom: 6 }}>
-          <div className="ins-mk">L</div>
-          <div>
-            <h1 style={{ margin: 0 }}>Lathe Insights</h1>
-            <div className="meta">SIGN IN TO VIEW YOUR SHOW</div>
-          </div>
+        <img
+          src={wordmarkSrc}
+          alt="Lathe"
+          style={{ display: 'block', height: 64, width: 'auto', margin: '4px 0 12px' }}
+        />
+        <div
+          style={{
+            fontFamily: "'Saira Condensed', sans-serif",
+            fontWeight: 500,
+            fontSize: 18,
+            lineHeight: 1.25,
+            color: 'var(--ink)',
+            marginBottom: 22,
+          }}
+        >
+          Turn booth traffic into sales conversations.
         </div>
+        <div className="ins-label" style={{ marginBottom: 6 }}>SIGN IN TO VIEW YOUR SHOW</div>
 
         <form onSubmit={submit} style={{ marginTop: 18 }}>
           <label className="ins-label" htmlFor="login-email">Work email</label>
