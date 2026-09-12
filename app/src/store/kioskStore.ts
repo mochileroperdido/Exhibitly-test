@@ -182,12 +182,16 @@ export const useKioskStore = create<KioskState>()(
 
       openMedia: () => set({ mediaOpen: true, activeMediaId: null }),
       closeMedia: () => set({ mediaOpen: false, activeMediaId: null }),
-      // Tracking now lives on the <video> element itself (see MediaGallery):
-      // `video_play` fires on real playback start, `video_complete` on ended.
-      // Selecting a thumbnail is just intent, so it no longer emits.
+      // Fires `video_play` on the thumbnail tap because the browser's `play`
+      // event doesn't fire reliably in every iPadOS webview once autoplay
+      // muted kicks in — the tap is the play from the visitor's POV, same
+      // convention YouTube uses. `video_complete` still fires on the real
+      // `ended` event (see MediaGallery) so completion means completion.
       selectMedia: (id) => {
+        const s0 = get();
+        const title = mediaTitle(s0.activeEntryId, id);
+        analytics.playVideo(title);
         set((s) => {
-          const title = mediaTitle(s.activeEntryId, id);
           const already = s.sessionVideos.some((v) => v.productId === s.activeEntryId && v.title === title);
           return {
             activeMediaId: id,
