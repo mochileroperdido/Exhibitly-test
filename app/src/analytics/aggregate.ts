@@ -1,5 +1,6 @@
 import type { AnalyticsEvent, Aggregates, Deltas, LeadRecord } from './types';
 import { PRODUCTS } from './seed';
+import { catalog } from '../data/catalog';
 
 const HOURS = ['9a', '10a', '11a', '12p', '1p', '2p', '3p', '4p', '5p', '6p'];
 
@@ -35,18 +36,42 @@ export function aggregate(events: AnalyticsEvent[]): Aggregates {
     .map(([title, v]) => ({ title, dwellMs: v.taps ? v.dwell / v.taps : 0, taps: v.taps }))
     .sort((a, b) => b.dwellMs - a.dwellMs);
 
-  // Videos
-  const vidMap = new Map<string, { plays: number; comp: number; compCount: number }>();
+  // Videos. Key by (productId, title) so two products with the same clip
+  // title stay separate. Then enrich with the customer's catalog so every
+  // uploaded video appears — zero-play rows land at the bottom with a
+  // "no plays yet" state, so booth staff can tell a fresh clip isn't broken.
+  const VKEY = (pid: string, title: string) => `${pid}${title}`;
+  const vidMap = new Map<string, { productId: string; title: string; plays: number; comp: number; compCount: number }>();
   for (const e of plays) {
     const title = str(e.payload, 'title');
-    const cur = vidMap.get(title) ?? { plays: 0, comp: 0, compCount: 0 };
+    if (!title) continue;
+    const k = VKEY(e.productId, title);
+    const cur = vidMap.get(k) ?? { productId: e.productId, title, plays: 0, comp: 0, compCount: 0 };
     cur.plays += 1;
     if (typeof e.payload?.completion === 'number') { cur.comp += e.payload.completion as number; cur.compCount += 1; }
-    vidMap.set(title, cur);
+    vidMap.set(k, cur);
   }
-  const videos = [...vidMap.entries()]
-    .map(([title, v]) => ({ title, plays: v.plays, completionPct: v.compCount ? Math.round((v.comp / v.compCount) * 100) : 0 }))
-    .sort((a, b) => b.plays - a.plays);
+  // Seed zero-play entries for every video the customer has in the catalog
+  // so newly-uploaded clips show up before the first play.
+  for (const entry of catalog) {
+    for (const m of entry.media) {
+      const k = VKEY(entry.id, m.title);
+      if (!vidMap.has(k)) vidMap.set(k, { productId: entry.id, title: m.title, plays: 0, comp: 0, compCount: 0 });
+    }
+  }
+  const videos = [...vidMap.values()]
+    .map((v) => ({
+      productId: v.productId,
+      productLabel: PRODUCTS[v.productId] ?? v.productId,
+      title: v.title,
+      plays: v.plays,
+      completionPct: v.compCount ? Math.round((v.comp / v.compCount) * 100) : 0,
+    }))
+    .sort((a, b) =>
+      b.plays - a.plays
+      || a.productLabel.localeCompare(b.productLabel)
+      || a.title.localeCompare(b.title),
+    );
 
   // Interest + lead records
   const interestMap = new Map<string, number>();

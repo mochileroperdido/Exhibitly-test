@@ -41,7 +41,7 @@ export interface Aggregates {
   };
   attention: { title: string; dwellMs: number; taps: number }[];
   interest: { name: string; count: number }[];
-  videos: { title: string; plays: number; completionPct: number }[];
+  videos: { productId: string; productLabel: string; title: string; plays: number; completionPct: number }[];
   traffic: {
     hour: { label: string; value: number }[];
     day: { label: string; value: number }[];

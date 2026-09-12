@@ -19,14 +19,14 @@ export function ReportView({
   const k = agg.kpis;
   const topAttention = agg.attention[0]?.title ?? '—';
   const topInterest = agg.interest[0]?.name ?? '—';
-  const topVideo = agg.videos[0];
+  const topVideo = agg.videos.find((v) => v.plays > 0);
 
   const summaryText = [
     `Exhibly — Post-show report`,
     `${showName} · ${period}`,
     ``,
     `${k.sessions} visitors engaged the display and ${k.leads} left their details (${k.conversionPct}% conversion).`,
-    `Engagement rate ${k.engagementPct}%, average ${fmtTime(k.avgTimeMs)} per session, ${k.videos} how-to videos played.`,
+    `Engagement rate ${k.engagementPct}%, average ${fmtTime(k.avgTimeMs)} per session, ${k.videos} videos played.`,
     ``,
     `Held attention longest: ${agg.attention.slice(0, 3).map((a) => `${a.title} (${(a.dwellMs / 1000).toFixed(1)}s)`).join(', ')}.`,
     `Lead interest: ${agg.interest.map((i) => `${i.name} ${i.count}`).join(', ')}.`,

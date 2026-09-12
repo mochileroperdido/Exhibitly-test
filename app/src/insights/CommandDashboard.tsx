@@ -88,15 +88,27 @@ export function CommandDashboard({ agg, deltas, onExportLeads }: { agg: Aggregat
         </div>
 
         <div className="ins-panel">
-          <div className="ins-phead"><div><h2>How-to videos</h2><div className="sub">Plays · completion</div></div></div>
+          <div className="ins-phead"><div><h2>Videos</h2><div className="sub">Plays · completion</div></div></div>
           {agg.videos.length === 0 ? (
-            <div className="cap" style={{ opacity: 0.7 }}>No video plays yet in this slice.</div>
+            <div className="cap" style={{ opacity: 0.7 }}>No videos uploaded yet.</div>
           ) : (
             agg.videos.map((v) => (
-              <div className="ins-vid" key={v.title}>
-                <div className="r1"><span className="nm">{v.title}</span><span className="pl ins-num">{v.plays}</span></div>
-                <div className="t"><i style={{ width: `${v.completionPct}%` }} /></div>
-                <div className="cp">{v.completionPct}% average completion</div>
+              <div className="ins-vid" key={`${v.productId}${v.title}`}>
+                <div className="r1">
+                  <span className="nm">
+                    {v.title}
+                    <span className="ins-label" style={{ marginLeft: 8, opacity: 0.7 }}>{v.productLabel}</span>
+                  </span>
+                  <span className="pl ins-num">{v.plays}</span>
+                </div>
+                {v.plays > 0 ? (
+                  <>
+                    <div className="t"><i style={{ width: `${v.completionPct}%` }} /></div>
+                    <div className="cp">{v.completionPct}% average completion</div>
+                  </>
+                ) : (
+                  <div className="cp" style={{ opacity: 0.6 }}>No plays yet</div>
+                )}
               </div>
             ))
           )}
