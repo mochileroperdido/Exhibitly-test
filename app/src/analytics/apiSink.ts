@@ -23,10 +23,26 @@ export class ApiSink implements AnalyticsSink {
   private inFlight = false;
   private apiUrl: string;
   private kioskKey: string;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor(apiUrl: string, kioskKey: string) {
     this.apiUrl = apiUrl;
     this.kioskKey = kioskKey;
+    // Recurring drain so a session doesn't have to end (or fill 50 events)
+    // before anything shows on the dashboard. Global lifecycle listeners
+    // (pagehide / visibilitychange / online) are wired in analytics/index.ts.
+    if (typeof globalThis.setInterval === 'function') {
+      this.intervalId = setInterval(() => {
+        void this.flush();
+      }, this.flushIntervalMs);
+    }
+  }
+
+  dispose() {
+    if (this.intervalId != null) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
   }
 
   private read(): AnalyticsEvent[] {

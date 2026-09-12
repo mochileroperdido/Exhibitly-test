@@ -9,7 +9,7 @@ function csvCell(value: string): string {
 }
 
 export function leadsToCsv(leads: LeadRow[]): string {
-  const header = ['Name', 'Email', 'Interest', 'Explored', 'Product', 'Captured at'];
+  const header = ['Name', 'Email', 'Interest', 'Explored', 'Product', 'Also viewed', 'Captured at'];
   const rows = leads.map((l) =>
     [
       l.name,
@@ -17,6 +17,7 @@ export function leadsToCsv(leads: LeadRow[]): string {
       l.interest ?? '',
       Array.isArray(l.explored) ? l.explored.join(' · ') : '',
       l.product_key ?? '',
+      Array.isArray(l.also_viewed) ? l.also_viewed.join(' · ') : '',
       new Date(l.captured_at).toISOString(),
     ]
       .map((v) => csvCell(String(v)))

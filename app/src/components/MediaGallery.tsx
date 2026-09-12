@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react';
 import { useKioskStore } from '../store/kioskStore';
+import * as analytics from '../analytics';
 import type { CatalogEntry } from '../data/types';
 
 /** Per-product video gallery. Booth audio is already noisy and these are silent
@@ -10,6 +12,13 @@ export function MediaGallery({ entry }: { entry: CatalogEntry }) {
   const selectMedia = useKioskStore((s) => s.selectMedia);
   const openMedia = useKioskStore((s) => s.openMedia);
   const closeMedia = useKioskStore((s) => s.closeMedia);
+
+  // Guard `video_play` to fire once per (media id) per open — pause/resume and
+  // seek both re-fire the native `play` event but they're the same view.
+  const playedFor = useRef<string | null>(null);
+  useEffect(() => {
+    playedFor.current = null;
+  }, [activeMediaId]);
 
   if (!mediaOpen) return null;
   const active = activeMediaId ? entry.media.find((m) => m.id === activeMediaId) ?? null : null;
@@ -47,6 +56,12 @@ export function MediaGallery({ entry }: { entry: CatalogEntry }) {
             muted
             autoPlay
             playsInline
+            onPlay={() => {
+              if (playedFor.current === active.id) return;
+              playedFor.current = active.id;
+              analytics.playVideo(active.title);
+            }}
+            onEnded={() => analytics.videoComplete(active.title)}
             className="mt-4 w-full rounded-lg bg-black max-h-[70vh]"
           />
         ) : (

@@ -8,6 +8,7 @@ export type EventType =
   | 'product_view'
   | 'hotspot_open'
   | 'video_play'
+  | 'video_complete'
   | 'lead_capture';
 
 export interface AnalyticsEvent {
@@ -46,7 +47,7 @@ export interface Aggregates {
     day: { label: string; value: number }[];
   };
   leads: LeadRecord[];
-  byProduct: { productId: string; label: string; sessions: number; engagementPct: number; leads: number }[];
+  byProduct: { productId: string; label: string; productViews: number; engagementPct: number; leads: number }[];
 }
 
 export interface Deltas {

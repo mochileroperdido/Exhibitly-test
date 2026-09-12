@@ -12,6 +12,7 @@ const LeadSchema = z.object({
   email: z.string().trim().email().max(200),
   interest: z.string().max(60).optional(),
   explored: z.array(z.string().max(120)).max(50).default([]),
+  alsoViewed: z.array(z.string().max(120)).max(20).default([]),
   sessionId: z.string().max(64).optional(),
   productKey: z.string().max(64).optional(),
   consentGiven: z.literal(true), // hard gate
@@ -47,6 +48,7 @@ export default async function handler(req: Request): Promise<Response> {
     email: lead.email,
     interest: lead.interest ?? null,
     explored: lead.explored,
+    also_viewed: lead.alsoViewed,
     consent_given: lead.consentGiven,
     consent_text: lead.consentText,
     consent_version: lead.consentVersion,

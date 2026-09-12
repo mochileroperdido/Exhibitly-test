@@ -99,7 +99,7 @@ export function CommandDashboard({ agg, deltas, onExportLeads }: { agg: Aggregat
         </div>
       </section>
 
-      {agg.byProduct.length > 1 && (
+      {agg.byProduct.filter((p) => p.productViews > 0).length > 1 && (
         <section className="ins-panel" style={{ marginBottom: 14 }}>
           <div className="ins-phead"><div><h2>By product</h2><div className="sub">How engagement splits across the models on show</div></div></div>
           <div className="ins-prod">
@@ -107,7 +107,7 @@ export function CommandDashboard({ agg, deltas, onExportLeads }: { agg: Aggregat
               <div className="ins-prodcard" key={p.productId}>
                 <div className="pn">{p.label}</div>
                 <div className="pr">
-                  <div><div className="n ins-num">{p.sessions}</div><div className="l">Sessions</div></div>
+                  <div><div className="n ins-num">{p.productViews}</div><div className="l">Product views</div></div>
                   <div><div className="n ins-num">{p.engagementPct}%</div><div className="l">Engaged</div></div>
                   <div><div className="n ins-num">{p.leads}</div><div className="l">Leads</div></div>
                 </div>
