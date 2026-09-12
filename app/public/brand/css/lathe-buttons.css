@@ -1,0 +1,74 @@
+/* ============================================================
+   Lathe — Button  v1.0
+   Depends on lathe-colors.css semantic tokens.
+   Hierarchy: one .btn-primary per context · .btn-secondary for the
+   rest · .btn-ghost for low-emphasis / toolbar actions.
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font: 500 14px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 160ms ease, border-color 160ms ease,
+              color 160ms ease, box-shadow 160ms ease;
+}
+.btn svg { width: 16px; height: 16px; stroke-width: 1.75; flex: none; }
+
+/* Focus: same ring for every variant, never the browser default */
+.btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* Disabled: form recedes, layout holds */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ---- Primary · solid Lathe Orange, ink label ----------------- */
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-primary:hover  { background: var(--accent-hover); }
+.btn-primary:active { background: var(--accent-active); }
+
+/* ---- Secondary · outlined on panel --------------------------- */
+.btn-secondary {
+  background: var(--panel);
+  color: var(--ink);
+  border-color: var(--edge-2);
+}
+.btn-secondary:hover  { background: var(--panel-2); border-color: var(--muted); }
+.btn-secondary:active { background: var(--bg); }
+
+/* ---- Ghost · borderless, ink-2 label ------------------------- */
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+}
+.btn-ghost:hover  { background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink); }
+.btn-ghost:active { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+
+/* ---- Sizes --------------------------------------------------- */
+.btn-sm { height: 32px; padding: 0 10px; font-size: 13px; }
+.btn-lg { height: 44px; padding: 0 20px; font-size: 16px; }   /* kiosk: gloved hands */
+.btn-block { width: 100%; }
+
+/* ---- Icon-only ------------------------------------------------ */
+.btn-icon { width: 36px; padding: 0; justify-content: center; }
+.btn-icon.btn-sm { width: 32px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+}

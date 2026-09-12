@@ -1,37 +1,11 @@
 /* Insights dashboard styling — scoped under .ins, themeable via data-theme.
-   Colors/fonts are placeholders until the brand is locked. */
-.ins {
-  --bg: #0e1117;
-  --panel: #161b24;
-  --panel-2: #1b212c;
-  --edge: rgba(255, 255, 255, 0.07);
-  --edge-2: rgba(255, 255, 255, 0.12);
-  --ink: #f3f6fb;
-  --ink-2: #aab3c2;
-  --muted: #717c8e;
-  --accent: #ff7a33;
-  --blue: #3f92ea;
-  --aqua: #24b98a;
-  --track: rgba(255, 255, 255, 0.06);
-  --good: #34c785;
-  color-scheme: dark;
-}
-.ins[data-theme='light'] {
-  --bg: #eef0f4;
-  --panel: #ffffff;
-  --panel-2: #f7f8fb;
-  --edge: #e6e8ee;
-  --edge-2: #d7dae2;
-  --ink: #14161d;
-  --ink-2: #565b68;
-  --muted: #8b909c;
-  --accent: #ef5f1c;
-  --blue: #2a78d6;
-  --aqua: #159c72;
-  --track: #eceef4;
-  --good: #0a7d3f;
-  color-scheme: light;
-}
+   The brand file supplies the semantic tokens (--bg, --panel, --ink, --accent, …)
+   and toggles them via [data-theme="light"|"dark"], matching the dashboard's
+   existing token consumers. --blue and --track are dashboard-only extras kept here. */
+@import '../brand/lathe-colors.css';
+
+.ins { --blue: #3f92ea; --track: rgba(255, 255, 255, 0.06); color-scheme: dark; }
+.ins[data-theme='light'] { --blue: #2a78d6; --track: #eceef4; color-scheme: light; }
 
 .ins {
   position: fixed;
@@ -51,7 +25,6 @@
 /* Top bar */
 .ins-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
 .ins-brand { display: flex; align-items: center; gap: 12px; }
-.ins-mk { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; color: #111; font-weight: 800; font-size: 17px; }
 .ins-brand h1 { font-size: 18px; font-weight: 700; margin: 0; }
 .ins-brand .meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.06em; }
 .ins-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -217,8 +190,8 @@
 
 /* Top bar */
 .ins-topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--edge); }
-.ins-logo { display: inline-flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; }
-.ins-logo-name { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
+.ins-logo { display: inline-flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; color: var(--ink); }
+.ins-wordmark { display: block; height: 22px; width: auto; color: currentColor; }
 .ins-topbar-right { display: flex; align-items: center; gap: 10px; }
 .ins-account { display: flex; align-items: center; gap: 10px; }
 .ins-account-email { font-size: 13px; color: var(--ink-2); }

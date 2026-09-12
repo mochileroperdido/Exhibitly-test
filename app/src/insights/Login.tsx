@@ -23,16 +23,20 @@ export function Login({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     // On success, onAuthStateChange in InsightsApp swaps in the dashboard.
   };
 
+  const lockupSrc =
+    theme === 'dark'
+      ? '/brand/logos/svg/lathe-lockup-tagline-light.svg'
+      : '/brand/logos/svg/lathe-lockup-tagline-ink.svg';
+
   return (
     <div className="ins" data-theme={theme} style={{ display: 'grid', placeItems: 'center', minHeight: '100vh' }}>
       <div className="ins-panel" style={{ width: 'min(400px, 92vw)', padding: 28 }}>
-        <div className="ins-brand" style={{ marginBottom: 6 }}>
-          <div className="ins-mk">L</div>
-          <div>
-            <h1 style={{ margin: 0 }}>Lathe Insights</h1>
-            <div className="meta">SIGN IN TO VIEW YOUR SHOW</div>
-          </div>
-        </div>
+        <img
+          src={lockupSrc}
+          alt="Lathe — Turn booth traffic into sales conversations."
+          style={{ display: 'block', width: '100%', height: 'auto', marginBottom: 14 }}
+        />
+        <div className="ins-label" style={{ marginBottom: 6 }}>SIGN IN TO VIEW YOUR SHOW</div>
 
         <form onSubmit={submit} style={{ marginTop: 18 }}>
           <label className="ins-label" htmlFor="login-email">Work email</label>

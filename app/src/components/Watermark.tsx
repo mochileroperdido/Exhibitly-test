@@ -1,9 +1,11 @@
 import { useRef } from 'react';
 import { useKioskStore } from '../store/kioskStore';
 
-/** Small fixed-corner mark, per the UI doc ("Exhibly appears only as an 8px
- * watermark"). Tapping it 5x within 2s opens the hidden leads debug view —
- * an unobtrusive way to reach it without adding visible kiosk chrome. */
+/** Small fixed-corner Lathe wordmark, kept quiet so the kiosk stays the
+ * client's stage (brand rule: on kiosk Lathe appears in ink or light only,
+ * so the client colour can own the accent). Tapping it 5x within 2s opens
+ * the hidden leads debug view — an unobtrusive way to reach it without
+ * adding visible kiosk chrome. */
 export function Watermark() {
   const toggleLeadsView = useKioskStore((s) => s.toggleLeadsView);
   const taps = useRef(0);
@@ -23,12 +25,16 @@ export function Watermark() {
 
   return (
     <button
-      aria-label="Exhibly"
+      aria-label="Lathe"
       onClick={onTap}
       onPointerDown={(e) => e.stopPropagation()}
-      className="absolute left-3 bottom-2.5 font-mono text-[8px] tracking-[0.22em] text-graphite/35 pointer-events-auto bg-transparent border-none"
+      className="absolute left-3 bottom-2.5 pointer-events-auto bg-transparent border-none p-0 opacity-55"
     >
-      EXHIBLY
+      <img
+        src="/brand/logos/svg/lathe-wordmark-ink.svg"
+        alt="Lathe"
+        className="block h-3 w-auto"
+      />
     </button>
   );
 }

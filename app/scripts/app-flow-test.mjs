@@ -59,7 +59,7 @@ await page.waitForTimeout(2200);
 
 // Open leads debug view via watermark 5x tap
 for (let i = 0; i < 5; i++) {
-  await page.getByText('EXHIBLY').click();
+  await page.getByRole('button', { name: 'Lathe' }).click();
 }
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${outDir}/flow-${tag}-7-leads-debug.png` });
