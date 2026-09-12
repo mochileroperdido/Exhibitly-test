@@ -17,6 +17,33 @@ export function adminClient(): SupabaseClient {
   });
 }
 
+/**
+ * Safe diagnostic for 500s from the ingestion endpoints — reports the
+ * SUPABASE_URL host (public info, already in every browser) and the
+ * SERVICE_ROLE_KEY *format* (never any part of the value). Kept next to
+ * `adminClient()` so every handler that talks to Supabase has one obvious
+ * import for both.
+ */
+export function envDiagnostic(): { urlHost: string; keyFormat: string } {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let urlHost = 'missing';
+  if (url) {
+    try {
+      urlHost = new URL(url).host + new URL(url).pathname.replace(/\/$/, '');
+    } catch {
+      urlHost = `invalid: ${url.slice(0, 40)}`;
+    }
+  }
+  let keyFormat: string;
+  if (!key) keyFormat = 'missing';
+  else if (key.startsWith('eyJ')) keyFormat = 'legacy-jwt';
+  else if (key.startsWith('sb_secret_')) keyFormat = 'sb-secret';
+  else if (key.startsWith('sb_publishable_')) keyFormat = 'sb-publishable (WRONG — this is the browser key!)';
+  else keyFormat = 'unknown';
+  return { urlHost, keyFormat };
+}
+
 export async function sha256Hex(input: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');

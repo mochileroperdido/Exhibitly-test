@@ -2,7 +2,7 @@
 //
 // Uses the shared _kiosk helper so that server/env errors return 500 (not 401).
 import { z } from 'zod';
-import { adminClient, jsonResponse, resolveKiosk } from './_kiosk';
+import { adminClient, envDiagnostic, jsonResponse, resolveKiosk } from './_kiosk';
 
 export const config = { runtime: 'edge', regions: ['fra1'] };
 
@@ -50,7 +50,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { error } = await db
     .from('events')
     .upsert(rows, { onConflict: 'kiosk_id,client_id', ignoreDuplicates: true });
-  if (error) return jsonResponse(500, { error: 'write_failed' });
+  if (error) return jsonResponse(500, { error: 'write_failed', detail: error.message, env: envDiagnostic() });
 
   return jsonResponse(202, { ok: true, accepted: rows.length });
 }
