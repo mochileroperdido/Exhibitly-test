@@ -19,7 +19,11 @@ export function TopBar({
       <button className="ins-logo" onClick={onHome} aria-label="Lathe — all events">
         <img
           className="ins-wordmark"
-          src="/brand/logos/svg/lathe-wordmark-currentcolor.svg"
+          src={
+            theme === 'dark'
+              ? '/brand/logos/svg/lathe-wordmark-light.svg'
+              : '/brand/logos/svg/lathe-wordmark-ink.svg'
+          }
           alt="Lathe"
         />
       </button>

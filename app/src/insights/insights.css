@@ -190,8 +190,8 @@
 
 /* Top bar */
 .ins-topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--edge); }
-.ins-logo { display: inline-flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; color: var(--ink); }
-.ins-wordmark { display: block; height: 22px; width: auto; color: currentColor; }
+.ins-logo { display: inline-flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; }
+.ins-wordmark { display: block; height: 28px; width: auto; }
 .ins-topbar-right { display: flex; align-items: center; gap: 10px; }
 .ins-account { display: flex; align-items: center; gap: 10px; }
 .ins-account-email { font-size: 13px; color: var(--ink-2); }
