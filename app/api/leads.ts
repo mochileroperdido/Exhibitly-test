@@ -3,7 +3,7 @@
 // Uses the shared _kiosk helper so that server/env errors return 500 (not 401),
 // making config problems immediately diagnosable.
 import { z } from 'zod';
-import { adminClient, jsonResponse, resolveKiosk } from './_kiosk';
+import { adminClient, envDiagnostic, jsonResponse, resolveKiosk } from './_kiosk';
 
 export const config = { runtime: 'edge', regions: ['fra1'] };
 
@@ -53,7 +53,7 @@ export default async function handler(req: Request): Promise<Response> {
     consent_text: lead.consentText,
     consent_version: lead.consentVersion,
   });
-  if (error) return jsonResponse(500, { error: 'write_failed' });
+  if (error) return jsonResponse(500, { error: 'write_failed', detail: error.message, env: envDiagnostic() });
 
   return jsonResponse(201, { ok: true });
 }
