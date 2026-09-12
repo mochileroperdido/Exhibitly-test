@@ -19,6 +19,9 @@ export interface LeadPayload {
   email: string;
   interest?: string;
   explored: string[];
+  /** Product labels the visitor also engaged with (excluding the primary
+   *  productKey), in first-touched order. Empty for single-product sessions. */
+  alsoViewed?: string[];
   sessionId?: string;
   productKey?: string;
   consentGiven: true;

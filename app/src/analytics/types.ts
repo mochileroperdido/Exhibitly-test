@@ -47,7 +47,7 @@ export interface Aggregates {
     day: { label: string; value: number }[];
   };
   leads: LeadRecord[];
-  byProduct: { productId: string; label: string; sessions: number; engagementPct: number; leads: number }[];
+  byProduct: { productId: string; label: string; productViews: number; engagementPct: number; leads: number }[];
 }
 
 export interface Deltas {

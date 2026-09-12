@@ -79,22 +79,37 @@ export function aggregate(events: AnalyticsEvent[]): Aggregates {
     value,
   }));
 
-  // Per-product breakdown
-  const byProductMap = new Map<string, { sessions: number; engaged: Set<string>; leads: number }>();
-  for (const e of starts) {
-    const cur = byProductMap.get(e.productId) ?? { sessions: 0, engaged: new Set(), leads: 0 };
-    cur.sessions += 1;
-    byProductMap.set(e.productId, cur);
+  // Per-product breakdown. Product Views = distinct sessions that reached
+  // this product at least once (any event tagged to it). This scales to any
+  // number of products and lets a single visitor count for every product
+  // they touched, which is what a follow-up rep wants to see. Global
+  // "Sessions" (kpis.sessions) is unchanged and still counts wakes.
+  const reached = new Map<string, Set<string>>();
+  const engagedByProduct = new Map<string, Set<string>>();
+  const leadsByProduct = new Map<string, number>();
+  for (const e of events) {
+    if (!e.productId) continue;
+    let r = reached.get(e.productId);
+    if (!r) { r = new Set(); reached.set(e.productId, r); }
+    r.add(e.sessionId);
+    if (e.type === 'hotspot_open') {
+      let g = engagedByProduct.get(e.productId);
+      if (!g) { g = new Set(); engagedByProduct.set(e.productId, g); }
+      g.add(e.sessionId);
+    }
   }
-  for (const e of hotspots) byProductMap.get(e.productId)?.engaged.add(e.sessionId);
-  for (const e of leadEvents) { const c = byProductMap.get(e.productId); if (c) c.leads += 1; }
-  const byProduct = [...byProductMap.entries()].map(([productId, v]) => ({
-    productId,
-    label: PRODUCTS[productId] ?? productId,
-    sessions: v.sessions,
-    engagementPct: v.sessions ? Math.round((v.engaged.size / v.sessions) * 100) : 0,
-    leads: v.leads,
-  })).sort((a, b) => b.sessions - a.sessions);
+  for (const e of leadEvents) leadsByProduct.set(e.productId, (leadsByProduct.get(e.productId) ?? 0) + 1);
+  const byProduct = [...reached.entries()].map(([productId, sessSet]) => {
+    const productViews = sessSet.size;
+    const engaged = engagedByProduct.get(productId)?.size ?? 0;
+    return {
+      productId,
+      label: PRODUCTS[productId] ?? productId,
+      productViews,
+      engagementPct: productViews ? Math.round((engaged / productViews) * 100) : 0,
+      leads: leadsByProduct.get(productId) ?? 0,
+    };
+  }).sort((a, b) => b.productViews - a.productViews);
 
   return {
     kpis: {

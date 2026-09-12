@@ -6,6 +6,17 @@ import { queueLead } from '../lib/leadClient';
 
 const hotspotTitle = (entryId: string, hotspotId: string) =>
   catalog.find((c) => c.id === entryId)?.hotspots.find((h) => h.id === hotspotId)?.title ?? hotspotId;
+const mediaTitle = (entryId: string, mediaId: string) =>
+  catalog.find((c) => c.id === entryId)?.media.find((m) => m.id === mediaId)?.title ?? mediaId;
+const productLabel = (entryId: string) =>
+  catalog.find((c) => c.id === entryId)?.label ?? entryId;
+
+// Session-scoped record of what the visitor explored *at the moment they
+// explored it*. Storing the resolved title (not the id) plus the productId
+// means switching products mid-session preserves the earlier product's
+// exploration — resolving titles at capture-time against the last-active
+// entry would silently drop hotspots/videos that don't exist on that entry.
+type ExploredItem = { productId: string; title: string };
 
 export type Mode = 'attract' | 'explore';
 
@@ -46,8 +57,8 @@ interface KioskState {
   leadInterest: string;
   leadConsent: boolean;
   leadsViewOpen: boolean;
-  sessionHotspotsViewed: string[];
-  sessionMediaViewed: string[];
+  sessionHotspots: ExploredItem[];
+  sessionVideos: ExploredItem[];
   lastLoadMs: number | null;
   leads: Lead[];
 
@@ -94,8 +105,8 @@ export const useKioskStore = create<KioskState>()(
       leadInterest: '',
       leadConsent: false,
       leadsViewOpen: false,
-      sessionHotspotsViewed: [],
-      sessionMediaViewed: [],
+      sessionHotspots: [],
+      sessionVideos: [],
       lastLoadMs: null,
       leads: [],
 
@@ -123,8 +134,8 @@ export const useKioskStore = create<KioskState>()(
           leadEmail: '',
           leadInterest: '',
           leadConsent: false,
-          sessionHotspotsViewed: [],
-          sessionMediaViewed: [],
+          sessionHotspots: [],
+          sessionVideos: [],
         });
       },
 
@@ -132,11 +143,10 @@ export const useKioskStore = create<KioskState>()(
         if (get().mode === 'explore' && !get().switcherOpen) set({ switcherOpen: true });
       },
 
-      // Hotspot ids are shared across catalog entries (both variants show the
-      // same physical features), so switching the model variant deliberately
-      // keeps sessionHotspotsViewed accumulating rather than resetting it —
-      // that history is what makes the lead's "what did they explore" context
-      // meaningful to a follow-up sales rep.
+      // Switching products keeps sessionHotspots/sessionVideos accumulating so
+      // the lead reflects the whole visit, not just the last product touched.
+      // Each item carries its productId so titles resolve correctly even when
+      // products have disjoint hotspot/media sets.
       selectEntry: (id) => {
         analytics.viewProduct(id);
         set({ activeEntryId: id, activeHotspotId: null });
@@ -145,18 +155,21 @@ export const useKioskStore = create<KioskState>()(
       selectHotspot: (id) => {
         const s = get();
         const willOpen = s.activeHotspotId === id ? null : id;
-        if (willOpen) analytics.openHotspot(hotspotTitle(s.activeEntryId, willOpen));
+        const title = willOpen ? hotspotTitle(s.activeEntryId, willOpen) : null;
+        if (willOpen) analytics.openHotspot(title!);
         else analytics.closeHotspot();
         // Opening a hotspot dismisses the product overview so the two cards
         // never fight for screen space; closing the hotspot leaves the
         // overview closed (the user can re-open it from the dock).
+        const alreadyLogged =
+          !!title && s.sessionHotspots.some((h) => h.productId === s.activeEntryId && h.title === title);
         set({
           activeHotspotId: willOpen,
           overviewOpen: willOpen ? false : s.overviewOpen,
-          sessionHotspotsViewed:
-            id && !s.sessionHotspotsViewed.includes(id)
-              ? [...s.sessionHotspotsViewed, id]
-              : s.sessionHotspotsViewed,
+          sessionHotspots:
+            title && !alreadyLogged
+              ? [...s.sessionHotspots, { productId: s.activeEntryId, title }]
+              : s.sessionHotspots,
         });
       },
 
@@ -173,12 +186,16 @@ export const useKioskStore = create<KioskState>()(
       // `video_play` fires on real playback start, `video_complete` on ended.
       // Selecting a thumbnail is just intent, so it no longer emits.
       selectMedia: (id) => {
-        set((s) => ({
-          activeMediaId: id,
-          sessionMediaViewed: s.sessionMediaViewed.includes(id)
-            ? s.sessionMediaViewed
-            : [...s.sessionMediaViewed, id],
-        }));
+        set((s) => {
+          const title = mediaTitle(s.activeEntryId, id);
+          const already = s.sessionVideos.some((v) => v.productId === s.activeEntryId && v.title === title);
+          return {
+            activeMediaId: id,
+            sessionVideos: already
+              ? s.sessionVideos
+              : [...s.sessionVideos, { productId: s.activeEntryId, title }],
+          };
+        });
       },
 
       openLead: () => set({ leadOpen: true, leadDone: false, leadError: false }),
@@ -204,20 +221,27 @@ export const useKioskStore = create<KioskState>()(
           set({ leadError: true });
           return;
         }
-        const entry = catalog.find((c) => c.id === s.activeEntryId);
-        const hotspotTitles = s.sessionHotspotsViewed
-          .map((id) => entry?.hotspots.find((h) => h.id === id)?.title)
-          .filter((t): t is string => !!t);
-        const videoTitles = s.sessionMediaViewed
-          .map((id) => entry?.media.find((m) => m.id === id)?.title)
-          .filter((t): t is string => !!t);
+        // Titles were resolved at exploration time (see selectHotspot /
+        // selectMedia), so they survive product switches. Everything the
+        // visitor touched is preserved regardless of which product is active
+        // at submit time.
+        const hotspotTitles = s.sessionHotspots.map((h) => h.title);
+        const videoTitles = s.sessionVideos.map((v) => v.title);
+        // "Also viewed" = every product the visitor engaged with other than
+        // the currently-active (primary) one, in first-touched order.
+        const primary = s.activeEntryId;
+        const touchedIds: string[] = [];
+        for (const it of [...s.sessionHotspots, ...s.sessionVideos]) {
+          if (it.productId !== primary && !touchedIds.includes(it.productId)) touchedIds.push(it.productId);
+        }
+        const alsoViewed = touchedIds.map(productLabel);
         const lead: Lead = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           name: s.leadName.trim(),
           email: s.leadEmail.trim(),
           interest: s.leadInterest,
           createdAt: new Date().toISOString(),
-          variantViewed: entry?.label ?? s.activeEntryId,
+          variantViewed: productLabel(primary),
           hotspotsViewed: hotspotTitles,
           consentGiven: true,
           consentText: CONSENT_TEXT,
@@ -233,8 +257,9 @@ export const useKioskStore = create<KioskState>()(
           email: lead.email,
           interest: lead.interest || undefined,
           explored: [...hotspotTitles, ...videoTitles],
+          alsoViewed,
           sessionId: analytics.currentSessionId() ?? undefined,
-          productKey: s.activeEntryId,
+          productKey: primary,
           consentGiven: true,
           consentText: CONSENT_TEXT,
           consentVersion: CONSENT_VERSION,

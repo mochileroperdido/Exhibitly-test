@@ -15,6 +15,7 @@ export interface LeadRow {
   email: string;
   interest: string | null;
   explored: string[];
+  also_viewed: string[];
   product_key: string | null;
   client_session_id: string | null;
   captured_at: string;
@@ -45,7 +46,7 @@ export async function loadInsights(showId: string, kioskId?: string): Promise<In
     .order('ts');
   let leadsQ = db
     .from('leads')
-    .select('id,name,email,interest,explored,product_key,client_session_id,captured_at')
+    .select('id,name,email,interest,explored,also_viewed,product_key,client_session_id,captured_at')
     .eq('show_id', showId)
     .order('captured_at', { ascending: false });
   if (kioskId) {
@@ -60,7 +61,9 @@ export async function loadInsights(showId: string, kioskId?: string): Promise<In
   if (eErr) throw eErr;
   if (lErr) throw lErr;
 
-  const leads = (leadRows ?? []) as LeadRow[];
+  const leads = ((leadRows ?? []) as Array<Omit<LeadRow, 'also_viewed'> & { also_viewed?: unknown }>).map(
+    (l) => ({ ...l, also_viewed: Array.isArray(l.also_viewed) ? (l.also_viewed as string[]) : [] }),
+  ) as LeadRow[];
 
   const events: AnalyticsEvent[] = (eventRows ?? []).map((r: EventRow) => ({
     id: r.id,
