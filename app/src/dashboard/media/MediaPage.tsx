@@ -3,6 +3,7 @@ import type { MediaAsset, Product } from '../shared/content';
 import { listMedia, listProducts, createMedia, deleteMedia } from '../shared/content';
 import { uploadAsset, validateFile, describeRules } from '../shared/upload';
 import { loadWithSchemaGuard } from '../shared/schemaGuard';
+import { EmptyState } from '../shared/EmptyState';
 import { getSupabase } from '../../lib/supabase';
 
 interface RowWithPreview extends MediaAsset {
@@ -82,11 +83,17 @@ export function MediaPage() {
 
   if (products.length === 0) {
     return (
-      <div className="ins-empty">
-        <h1 className="ins-empty-title">Media</h1>
-        <p className="ins-empty-body">Add a product first — media attaches to products, not directly to events.</p>
-        <a className="ins-btn primary" href="#/products/new">Add a product</a>
-      </div>
+      <EmptyState
+        icon={
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M10 9v6l5-3-5-3Z" fill="currentColor" stroke="none" />
+          </svg>
+        }
+        title="No media yet"
+        body="Add a product first — media attaches to products, not directly to events."
+        cta={{ label: 'Add a product', hash: '#/products/new' }}
+      />
     );
   }
 
@@ -103,7 +110,7 @@ export function MediaPage() {
         <h2 className="ins-h2">Upload</h2>
         <p className="ins-sub" style={{ marginTop: 4 }}>Pick a product, then choose a file. Uploads attach to the selected product.</p>
         <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <select id="upload-product" className="ins-input" style={{ marginTop: 0, width: 'auto' }} defaultValue="">
+          <select id="upload-product" className="ins-select" defaultValue="">
             <option value="" disabled>Pick a product…</option>
             {products.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
@@ -131,7 +138,7 @@ export function MediaPage() {
       <section className="ins-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 className="ins-h2">Library</h2>
-          <select className="ins-input" style={{ marginTop: 0, width: 'auto' }} value={filterProduct} onChange={(e) => setFilterProduct(e.target.value)}>
+          <select className="ins-select" value={filterProduct} onChange={(e) => setFilterProduct(e.target.value)}>
             <option value="">All products</option>
             {products.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>

@@ -62,12 +62,17 @@ export default async function handler(req: Request): Promise<Response> {
       const byId = new Map<string, { kind: string; required: boolean; options: unknown }>(
         (fields ?? []).map((f) => [f.id as string, { kind: f.kind as string, required: f.required as boolean, options: f.options }]),
       );
+      const emailSchema = z.string().email();
       for (const [fid, val] of Object.entries(answers)) {
         const spec = byId.get(fid);
         if (!spec) continue; // drop unknown keys silently
         if (spec.kind === 'single_select') {
           const opts = Array.isArray(spec.options) ? spec.options as string[] : [];
           if (!opts.includes(val)) continue; // drop values outside the allowed set
+        }
+        if (spec.kind === 'email') {
+          const parsed = emailSchema.safeParse(val.trim());
+          if (!parsed.success) continue; // drop malformed emails
         }
         validatedAnswers[fid] = val;
       }

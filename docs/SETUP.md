@@ -99,6 +99,13 @@ browser console will log a single
 `[dashboard] migration 0008/0009 not applied — see docs/SETUP.md` per
 section. The customer is expected to run the SQL themselves.
 
+**Optional — seed the pilot org with the demo catalog** (`0010_seed_demo_content.sql`).
+Run this once after 0008/0009 and the pilot org's Products and Media tabs
+open populated with the Cordless Drill + Rolling Tool Chest that ship in
+the bundle, plus their hotspots and videos, plus both products attached
+to the pilot show. Guarded: only inserts if the pilot org has zero
+products, so a re-run is a no-op and no customer org is ever touched.
+
 ---
 
 ## 1. Domain — meetlathe.com 🟢

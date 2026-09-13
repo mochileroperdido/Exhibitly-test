@@ -1,6 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useKioskStore, CONSENT_TEXT } from '../store/kioskStore';
 import { getRuntimeForm } from '../kioskBoot';
+
+// Very loose "looks like an email" check — one @, at least one dot after it,
+// no whitespace. The server does the real validation with z.string().email().
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function looksLikeEmail(v: string): boolean {
+  return EMAIL_RE.test(v.trim());
+}
 
 // Where the exhibitor's privacy notice lives. Falls back to the Lathe notice
 // until a real show sets its own per-show privacy URL via env.
@@ -55,6 +62,11 @@ export function LeadCaptureForm() {
   // pills so existing pilot events keep behaving exactly as they did.
   const form = getRuntimeForm();
 
+  // On-blur email format hints for the built-in email field and any custom
+  // email-kind question. `null` = pristine (nothing shown), string = error copy.
+  const [emailHint, setEmailHint] = useState<string | null>(null);
+  const [answerHints, setAnswerHints] = useState<Record<string, string | null>>({});
+
   useEffect(() => {
     if (!leadDone) return;
     const t = setTimeout(closeLead, 2400);
@@ -102,10 +114,12 @@ export function LeadCaptureForm() {
               Email
               <input
                 value={leadEmail}
-                onChange={(e) => setLeadField('leadEmail', e.target.value)}
+                onChange={(e) => { setLeadField('leadEmail', e.target.value); if (emailHint) setEmailHint(null); }}
+                onBlur={(e) => setEmailHint(e.target.value && !looksLikeEmail(e.target.value) ? "That doesn't look like a valid email." : null)}
                 type="email"
                 className="focus-ring block w-full box-border mt-1.5 px-3.5 py-3 font-sans text-base bg-white border border-line rounded-[10px] text-graphite"
               />
+              {emailHint && <span className="block mt-1 text-[12px] font-sans text-[#c0341d] normal-case tracking-normal">{emailHint}</span>}
             </label>
 
             {form ? (
@@ -135,12 +149,25 @@ export function LeadCaptureForm() {
                       })}
                     </div>
                   ) : (
-                    <input
-                      type={f.kind === 'email' ? 'email' : 'text'}
-                      value={leadAnswers[f.id] ?? ''}
-                      onChange={(e) => setLeadAnswer(f.id, e.target.value)}
-                      className="focus-ring block w-full box-border mt-1.5 px-3.5 py-3 font-sans text-base bg-white border border-line rounded-[10px] text-graphite"
-                    />
+                    <>
+                      <input
+                        type={f.kind === 'email' ? 'email' : 'text'}
+                        value={leadAnswers[f.id] ?? ''}
+                        onChange={(e) => {
+                          setLeadAnswer(f.id, e.target.value);
+                          if (answerHints[f.id]) setAnswerHints((h) => ({ ...h, [f.id]: null }));
+                        }}
+                        onBlur={(e) => {
+                          if (f.kind !== 'email') return;
+                          const v = e.target.value;
+                          setAnswerHints((h) => ({ ...h, [f.id]: v && !looksLikeEmail(v) ? "That doesn't look like a valid email." : null }));
+                        }}
+                        className="focus-ring block w-full box-border mt-1.5 px-3.5 py-3 font-sans text-base bg-white border border-line rounded-[10px] text-graphite"
+                      />
+                      {answerHints[f.id] && (
+                        <span className="block mt-1 text-[12px] font-sans text-[#c0341d] normal-case tracking-normal">{answerHints[f.id]}</span>
+                      )}
+                    </>
                   )}
                 </div>
               ))

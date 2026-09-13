@@ -38,9 +38,13 @@ const Icon = {
     </svg>
   ),
   brand: ({ size }: { size: number }) => (
+    // Color-palette / swatch. Three overlapping rounded rectangles suggest
+    // stackable brand swatches — reads as "brand / palette", not "prohibited".
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 3a9 9 0 0 0 0 18M3 12h18" />
+      <path d="M12 3a9 9 0 1 0 8.94 10.1c.2-1.34-.94-2.1-2.14-2.1H16a2 2 0 0 1-2-2V7.14c0-1.2-.76-2.34-2.1-2.14A9.03 9.03 0 0 0 12 3Z" />
+      <circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="14.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="13.5" cy="15.5" r="1" fill="currentColor" stroke="none" />
     </svg>
   ),
 };
@@ -86,6 +90,24 @@ export function Sidebar({
   useEffect(() => {
     try { localStorage.setItem(STORE_KEY, collapsed ? '1' : '0'); } catch { /* ignore */ }
   }, [collapsed]);
+
+  // Alt+1..5 jumps sections. Doesn't fire while typing in an input; the
+  // Alt modifier keeps it out of the way of browser and OS shortcuts.
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      if (!e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      const active = document.activeElement;
+      const tag = active?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const idx = Number(e.key) - 1;
+      if (idx >= 0 && idx < SECTIONS.length) {
+        e.preventDefault();
+        onNav(SECTIONS[idx].hash);
+      }
+    };
+    window.addEventListener('keydown', on);
+    return () => window.removeEventListener('keydown', on);
+  }, [onNav]);
 
   // Close the mobile drawer on nav.
   const navigate = (hash: string) => {

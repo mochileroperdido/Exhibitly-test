@@ -49,44 +49,51 @@ export function FormsPage() {
       <div className="ins-pagehead">
         <div>
           <h1 className="ins-h1">Forms</h1>
-          <p className="ins-sub">Name, email and consent are always collected. Add up to 5 custom questions to build a form for a specific event.</p>
+          <p className="ins-sub">Name, email and consent are always collected. Add a custom form to ask up to 5 extra questions on a specific event.</p>
         </div>
         <a className="ins-btn primary" href="#/forms/new">New form</a>
       </div>
 
       {error && <p className="ins-warn">{error}</p>}
 
-      {forms.length === 0 ? (
-        <div className="ins-empty" style={{ padding: '28px 20px' }}>
-          <p className="ins-empty-body">No custom forms yet — every event uses the default (name, email, area of interest).</p>
-          <a className="ins-btn primary" href="#/forms/new">Build a form</a>
+      <div className="ins-cards">
+        {/* Pinned informational row — the built-in Default form is always
+            available and can't be edited or deleted. Makes it clear that no
+            custom form is required to run an event. */}
+        <div className="ins-card is-default">
+          <div className="ins-card-top">
+            <span className="ins-card-name">Default form (built-in)</span>
+            <span className="ins-badge">Default</span>
+          </div>
+          <div className="ins-card-dates">Name · Email · Area of interest · Consent</div>
+          <div className="ins-sub" style={{ marginTop: 10, fontSize: 12 }}>
+            Every event uses this unless you pick a custom form below.
+          </div>
         </div>
-      ) : (
-        <div className="ins-cards">
-          {forms.map((f) => (
-            <div key={f.id} className="ins-card">
-              <div className="ins-card-top">
-                <a className="ins-card-name" href={`#/forms/${f.id}`}>{f.name}</a>
-                {f.is_default && <span className="ins-badge">Default</span>}
-              </div>
-              <div className="ins-card-dates">{f.fields.length} custom question{f.fields.length === 1 ? '' : 's'}</div>
-              <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                <a className="ins-btn" href={`#/forms/${f.id}`}>Edit</a>
-                <button
-                  className="ins-btn ghost"
-                  onClick={async () => {
-                    if (!confirm(`Delete form "${f.name}"? Events still using it will fall back to the default.`)) return;
-                    await deleteForm(f.id);
-                    setForms(forms.filter((x) => x.id !== f.id));
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
+
+        {forms.map((f) => (
+          <div key={f.id} className="ins-card">
+            <div className="ins-card-top">
+              <a className="ins-card-name" href={`#/forms/${f.id}`}>{f.name}</a>
+              {f.is_default && <span className="ins-badge">Org default</span>}
             </div>
-          ))}
-        </div>
-      )}
+            <div className="ins-card-dates">{f.fields.length} custom question{f.fields.length === 1 ? '' : 's'}</div>
+            <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+              <a className="ins-btn" href={`#/forms/${f.id}`}>Edit</a>
+              <button
+                className="ins-btn ghost"
+                onClick={async () => {
+                  if (!confirm(`Delete form "${f.name}"? Events still using it will fall back to the default.`)) return;
+                  await deleteForm(f.id);
+                  setForms(forms.filter((x) => x.id !== f.id));
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

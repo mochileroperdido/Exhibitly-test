@@ -233,11 +233,23 @@ export const useKioskStore = create<KioskState>()(
           set({ leadError: true });
           return;
         }
-        // Enforce `required` on the org's custom form fields, if any.
+        // Email format: last-chance client-side guard. The API also refuses
+        // malformed emails; this just avoids a needless round-trip.
+        const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRe.test(s.leadEmail.trim())) {
+          set({ leadError: true });
+          return;
+        }
+        // Enforce `required` + email-format on the org's custom form fields.
         const form = getRuntimeForm();
         if (form) {
           for (const f of form.fields) {
-            if (f.required && !(s.leadAnswers[f.id] ?? '').trim()) {
+            const val = (s.leadAnswers[f.id] ?? '').trim();
+            if (f.required && !val) {
+              set({ leadError: true });
+              return;
+            }
+            if (f.kind === 'email' && val && !emailRe.test(val)) {
               set({ leadError: true });
               return;
             }

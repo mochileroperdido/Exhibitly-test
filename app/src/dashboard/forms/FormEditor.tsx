@@ -95,6 +95,9 @@ export function FormEditor({ formId, onDone }: { formId: string | null; onDone: 
         </div>
       </div>
 
+      <div className="ins-form-grid">
+        <div>
+
       <section className="ins-panel">
         <CharInput label="Form name" value={name} onChange={setName} max={60} placeholder="e.g. BuildTech Expo 2026" />
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 12 }}>
@@ -123,12 +126,11 @@ export function FormEditor({ formId, onDone }: { formId: string | null; onDone: 
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <div style={{ flex: 1 }}>
                 <CharInput label={`Question ${i + 1}`} value={f.label} onChange={(v) => updateField(i, { label: v })} max={40} />
-                <div style={{ display: 'flex', gap: 12, marginTop: 8, alignItems: 'center' }}>
-                  <label className="ins-label" style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 12, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label className="ins-label" style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
                     Type
                     <select
-                      className="ins-input"
-                      style={{ marginTop: 0, width: 'auto' }}
+                      className="ins-select"
                       value={f.kind}
                       onChange={(e) => updateField(i, { kind: e.target.value as Draft['kind'], options: e.target.value === 'single_select' ? (f.options.length ? f.options : ['', '']) : [] })}
                     >
@@ -142,6 +144,13 @@ export function FormEditor({ formId, onDone }: { formId: string | null; onDone: 
                     Required
                   </label>
                 </div>
+                <p className="ins-sub" style={{ marginTop: 6, fontSize: 12 }}>
+                  {f.kind === 'email'
+                    ? 'Kiosk validates the format on this field.'
+                    : f.kind === 'single_select'
+                      ? 'Visitors tap one of the pill-shaped options.'
+                      : 'Free-form input — accepts anything.'}
+                </p>
 
                 {f.kind === 'single_select' && (
                   <div style={{ marginTop: 10 }}>
@@ -192,6 +201,52 @@ export function FormEditor({ formId, onDone }: { formId: string | null; onDone: 
       </section>
 
       {error && <p className="ins-warn" style={{ marginTop: 12 }}>{error}</p>}
+        </div>
+        <aside className="ins-form-preview">
+          <div className="ins-form-preview-label">Kiosk preview</div>
+          <KioskPreview name={name} fields={fields} />
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+/** Approximate render of what the kiosk's LeadCapture will show. Uses the
+ *  runtime brand accent if the customer has set one; otherwise Lathe's default
+ *  orange. Not a shared component with LeadCapture — we don't want the
+ *  dashboard to depend on kiosk internals — so this is a simple mirror
+ *  updated when LeadCapture changes shape. */
+function KioskPreview({ name, fields }: { name: string; fields: Draft[] }) {
+  return (
+    <div className="ins-kiosk-preview">
+      <div className="ins-kp-head">
+        <div className="ins-kp-title">Stay in touch</div>
+        <div className="ins-kp-sub">We'll send specs and pricing after the show.</div>
+      </div>
+      <div className="ins-kp-fieldlabel">Name</div>
+      <div className="ins-kp-input" />
+      <div className="ins-kp-fieldlabel">Email</div>
+      <div className="ins-kp-input" />
+      {fields.map((f, i) => (
+        <div key={i}>
+          <div className="ins-kp-fieldlabel">{f.label || `Question ${i + 1}`}{f.required ? ' *' : ''}</div>
+          {f.kind === 'single_select' ? (
+            <div className="ins-kp-chips">
+              {(f.options.length ? f.options : ['Option A', 'Option B']).map((o, j) => (
+                <span key={j} className="ins-kp-chip">{o || `Option ${j + 1}`}</span>
+              ))}
+            </div>
+          ) : (
+            <div className="ins-kp-input" />
+          )}
+        </div>
+      ))}
+      <div className="ins-kp-consent">
+        <span className="ins-kp-checkbox" />
+        <span>I agree that my details may be shared with this exhibitor…</span>
+      </div>
+      <div className="ins-kp-submit">Send it over</div>
+      <div className="ins-kp-note">{name ? `Preview of "${name}"` : 'Preview updates as you edit'}</div>
     </div>
   );
 }

@@ -124,7 +124,7 @@ export function BrandPage() {
           <h2 className="ins-h2">Accent color</h2>
           <label className="ins-label" style={{ display: 'block', marginTop: 12 }}>
             Hex color
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+            <div className="ins-hex-row">
               <input
                 type="color"
                 value={normalized ?? '#ef5f1c'}
@@ -138,7 +138,7 @@ export function BrandPage() {
                 onChange={(e) => setAccent(e.target.value)}
                 placeholder="#ef5f1c"
                 className="ins-input"
-                style={{ flex: 1, marginTop: 0 }}
+                style={{ marginTop: 0 }}
               />
             </div>
           </label>

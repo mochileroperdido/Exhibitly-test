@@ -12,10 +12,12 @@ const SUBTITLE_MAX = 48;
 const TAGLINE_MAX = 80;
 const OVERVIEW_MAX = 400;
 
-type Tab = 'model' | 'details' | 'hotspots';
+type Step = 0 | 1 | 2;
+const STEP_LABELS = ['Model', 'Details', 'Hotspots'] as const;
+const UPSELL_EMAIL = 'inquiries@meetlathe.com';
 
 export function ProductEditor({ productId, onDone }: { productId: string | null; onDone: () => void }) {
-  const [tab, setTab] = useState<Tab>('model');
+  const [step, setStep] = useState<Step>(0);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(!!productId);
   const [saving, setSaving] = useState(false);
@@ -85,7 +87,7 @@ export function ProductEditor({ productId, onDone }: { productId: string | null;
   }
 
   async function save() {
-    if (!label.trim()) { setError('Give the product a name.'); setTab('details'); return; }
+    if (!label.trim()) { setError('Give the product a name.'); setStep(1); return; }
     setSaving(true);
     setError(null);
     try {
@@ -135,6 +137,22 @@ export function ProductEditor({ productId, onDone }: { productId: string | null;
   const rules = describeRules('models');
   const sizeMB = modelBytes ? Math.round((modelBytes / (1024 * 1024)) * 100) / 100 : null;
 
+  // Step completion is derived from the actual data, not "did the user
+  // click Continue" — so on edit, past steps light up green immediately.
+  const stepDone: [boolean, boolean, boolean] = [
+    !!modelPath,
+    label.trim().length > 0,
+    hotspots.length > 0 && hotspots.every((h) => h.title && h.description),
+  ];
+  const canGoTo = (target: Step): boolean => {
+    // In edit mode any step is jumpable. In create mode, a step is jumpable
+    // if every earlier step is done, or if we're going backwards.
+    if (productId) return true;
+    if (target <= step) return true;
+    for (let i = 0; i < target; i++) if (!stepDone[i]) return false;
+    return true;
+  };
+
   return (
     <div className="ins-page">
       <div className="ins-pagehead">
@@ -148,17 +166,44 @@ export function ProductEditor({ productId, onDone }: { productId: string | null;
         <div style={{ display: 'flex', gap: 8 }}>
           {productId && <button className="ins-btn ghost" onClick={remove}>Delete</button>}
           <button className="ins-btn ghost" onClick={onDone}>Cancel</button>
-          <button className="ins-btn primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save product'}</button>
         </div>
       </div>
 
-      <div className="ins-tabs" role="tablist">
-        <button role="tab" aria-selected={tab === 'model'} className={'ins-tab' + (tab === 'model' ? ' is-current' : '')} onClick={() => setTab('model')}>Model</button>
-        <button role="tab" aria-selected={tab === 'details'} className={'ins-tab' + (tab === 'details' ? ' is-current' : '')} onClick={() => setTab('details')}>Details</button>
-        <button role="tab" aria-selected={tab === 'hotspots'} className={'ins-tab' + (tab === 'hotspots' ? ' is-current' : '')} onClick={() => setTab('hotspots')} disabled={!modelSignedUrl}>Hotspots</button>
-      </div>
+      <ol className="ins-stepper" aria-label="Product creation steps">
+        {STEP_LABELS.map((lab, i) => {
+          const done = stepDone[i];
+          const active = step === i;
+          const jumpable = canGoTo(i as Step);
+          return (
+            <li
+              key={lab}
+              className={
+                'ins-stepper-item' +
+                (active ? ' is-active' : '') +
+                (done ? ' is-done' : '') +
+                (jumpable ? '' : ' is-locked')
+              }
+            >
+              <button
+                type="button"
+                className="ins-stepper-btn"
+                onClick={() => jumpable && setStep(i as Step)}
+                disabled={!jumpable}
+                aria-current={active ? 'step' : undefined}
+              >
+                <span className="ins-stepper-circle" aria-hidden>
+                  {done && !active
+                    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7" /></svg>
+                    : i + 1}
+                </span>
+                <span className="ins-stepper-label">{lab}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
 
-      {tab === 'model' && (
+      {step === 0 && (
         <section className="ins-panel">
           <h2 className="ins-h2">3D model</h2>
           <p className="ins-sub">Format: {rules.formats}. Max size: {rules.size}. For best kiosk performance target under 25 MB and around 30k triangles.</p>
@@ -181,12 +226,12 @@ export function ProductEditor({ productId, onDone }: { productId: string | null;
             {sizeMB && <p className="ins-sub" style={{ marginTop: 8 }}>Uploaded: {sizeMB} MB</p>}
           </div>
           <p className="ins-sub" style={{ marginTop: 12 }}>
-            Don't have a model yet? <a href="mailto:hello@meetlathe.com?subject=3D%20modeling%20service">We can build one for you →</a>
+            Don't have a model yet? <a href={`mailto:${UPSELL_EMAIL}?subject=3D%20modeling%20service`}>We can build one for you →</a>
           </p>
         </section>
       )}
 
-      {tab === 'details' && (
+      {step === 1 && (
         <section className="ins-panel">
           <h2 className="ins-h2">Details</h2>
           <CharInput label="Product name" value={label} onChange={setLabel} max={LABEL_MAX} placeholder="e.g. Cordless Drill" />
@@ -216,15 +261,40 @@ export function ProductEditor({ productId, onDone }: { productId: string | null;
         </section>
       )}
 
-      {tab === 'hotspots' && (
+      {step === 2 && (
         <section className="ins-panel">
-          <h2 className="ins-h2">Hotspots</h2>
+          <h2 className="ins-h2">Hotspots <span className="ins-sub" style={{ fontSize: 13, fontWeight: 400 }}>· optional</span></h2>
           {modelSignedUrl
             ? <HotspotPicker modelUrl={modelSignedUrl} hotspots={hotspots} onChange={setHotspots} />
-            : <p className="ins-sub">Upload a model first.</p>
+            : <p className="ins-sub">Upload a model first — hotspots need something to sit on.</p>
           }
         </section>
       )}
+
+      <div className="ins-stepper-nav">
+        <div>
+          {step > 0 && (
+            <button className="ins-btn" onClick={() => setStep((step - 1) as Step)}>← Back</button>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {step === 2 && hotspots.length === 0 && (
+            <button className="ins-btn ghost" onClick={save} disabled={saving}>Save without hotspots</button>
+          )}
+          {step < 2 ? (
+            <button
+              className="ins-btn primary"
+              onClick={() => setStep((step + 1) as Step)}
+              disabled={!stepDone[step]}
+              title={!stepDone[step] ? (step === 0 ? 'Upload a model first' : 'Add a product name first') : undefined}
+            >
+              Continue →
+            </button>
+          ) : (
+            <button className="ins-btn primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save product'}</button>
+          )}
+        </div>
+      </div>
 
       {error && <p className="ins-warn" style={{ marginTop: 12 }}>{error}</p>}
       {product && <input type="hidden" value={product.id} />}
