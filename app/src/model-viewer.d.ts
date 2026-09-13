@@ -11,6 +11,11 @@ export interface ModelViewerElement extends HTMLElement {
   getCameraOrbit(): { theta: number; phi: number; radius: number };
   /** Current vertical field of view, in degrees. */
   getFieldOfView(): number;
+  /** Ray-cast into the loaded mesh from a client point; null if no hit. */
+  positionAndNormalFromPoint(
+    clientX: number,
+    clientY: number,
+  ): { position: { x: number; y: number; z: number }; normal: { x: number; y: number; z: number } } | null;
 }
 
 type ModelViewerJSX = DetailedHTMLProps<HTMLAttributes<ModelViewerElement>, ModelViewerElement> & {
