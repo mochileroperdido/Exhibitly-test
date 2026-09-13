@@ -148,8 +148,8 @@ export function BrandPage() {
               Contrast {contrast.toFixed(2)}:1 — try a darker accent <span style={{ color: 'var(--muted)' }}>(WCAG AA needs 4.5:1)</span>.
             </p>
           )}
-          <div style={{ marginTop: 16 }}>
-            <div className="ins-label" style={{ marginBottom: 6 }}>Preview</div>
+          <div className="ins-label" style={{ marginTop: 16, marginBottom: 6 }}>Preview</div>
+          <div className="ins-preview-box">
             <div
               className="ins-brand-preview"
               style={{ background: normalized ?? '#ef5f1c', color: onAccent }}
