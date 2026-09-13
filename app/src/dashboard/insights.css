@@ -1,0 +1,446 @@
+/* Insights dashboard styling — scoped under .ins, themeable via data-theme.
+   The brand file supplies the semantic tokens (--bg, --panel, --ink, --accent, …)
+   and toggles them via [data-theme="light"|"dark"], matching the dashboard's
+   existing token consumers. --blue and --track are dashboard-only extras kept here. */
+@import '../brand/lathe-colors.css';
+
+.ins { --blue: #3f92ea; --track: rgba(255, 255, 255, 0.06); color-scheme: dark; }
+.ins[data-theme='light'] { --blue: #2a78d6; --track: #eceef4; color-scheme: light; }
+
+.ins {
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.ins * { box-sizing: border-box; }
+.ins-mono { font-family: 'IBM Plex Mono', monospace; }
+.ins-num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.ins-wrap { max-width: 1280px; margin: 0 auto; padding: 20px 22px 48px; }
+.ins-label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+
+/* Two-column shell: sidebar + main. On mobile the sidebar becomes an
+   off-canvas drawer and .ins-mobiletoggle floats at the top-left. */
+.ins-shell { display: grid; grid-template-columns: auto 1fr; min-height: 100%; }
+.ins-main { min-width: 0; }
+.ins-mobiletoggle { display: none; position: fixed; top: 12px; left: 12px; z-index: 45; width: 40px; height: 40px; border-radius: 10px; background: var(--panel); border: 1px solid var(--edge); color: var(--ink); cursor: pointer; align-items: center; justify-content: center; }
+@media (max-width: 720px) {
+  .ins-mobiletoggle { display: inline-flex; }
+  .ins-shell { grid-template-columns: 1fr; }
+  .ins-wrap { padding-top: 64px; }
+}
+
+/* Sidebar */
+.ins-sidebar { position: sticky; top: 0; height: 100vh; width: 232px; background: var(--panel); border-right: 1px solid var(--edge); display: flex; flex-direction: column; padding: 12px 10px; transition: width 0.16s ease; z-index: 30; }
+.ins-sidebar.is-collapsed { width: 60px; }
+/* Sidebar brand mark — left-aligned to the same 12px inset as the section
+   icons so it sits in one visual column with the nav. Wordmark scales up
+   to ~30px so it reads as the anchor at the top of the rail. */
+.ins-sidebar-brand { display: flex; align-items: center; justify-content: flex-start; height: 48px; padding: 0 12px; background: none; border: none; cursor: pointer; margin-bottom: 8px; }
+.ins-sidebar-brand .ins-wordmark { display: block; height: 30px; width: auto; }
+/* Real brand glyph in the collapsed state — the favicon SVG. Its path is
+   hardcoded to ink, so on dark theme we invert to keep contrast. */
+.ins-sidebar-monogram { display: block; height: 30px; width: auto; }
+.ins[data-theme="dark"] .ins-sidebar-monogram { filter: invert(1); }
+.ins-sidebar.is-collapsed .ins-sidebar-brand { justify-content: center; padding: 0; }
+.ins-sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding-top: 6px; flex: 1; }
+.ins-sidebar-link { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; border: none; background: transparent; color: var(--ink-2); font: inherit; font-size: 14px; cursor: pointer; text-align: left; position: relative; }
+.ins-sidebar-link:hover { background: var(--panel-2); color: var(--ink); }
+.ins-sidebar-link.is-current { background: var(--panel-2); color: var(--ink); font-weight: 600; }
+.ins-sidebar-link.is-current::before { content: ''; position: absolute; left: -10px; top: 6px; bottom: 6px; width: 2px; border-radius: 2px; background: var(--accent); }
+.ins-sidebar-icon { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; color: currentColor; flex-shrink: 0; }
+.ins-sidebar-label { flex: 1; white-space: nowrap; overflow: hidden; }
+.ins-sidebar.is-collapsed .ins-sidebar-label { display: none; }
+
+.ins-sidebar-foot { border-top: 1px solid var(--edge); padding-top: 10px; margin-top: 8px; }
+.ins-sidebar-account { display: flex; align-items: center; gap: 10px; padding: 6px 8px; margin-bottom: 6px; }
+.ins-sidebar-avatar { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--panel-2); font-size: 12px; font-weight: 600; color: var(--ink); flex-shrink: 0; }
+.ins-sidebar-email { font-size: 13px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ins-sidebar.is-collapsed .ins-sidebar-email { display: none; }
+.ins-sidebar-footrow { display: flex; gap: 4px; padding: 2px 4px 4px; }
+.ins-sidebar.is-collapsed .ins-sidebar-footrow { flex-direction: column; }
+/* Hit area meets the P2-CRITICAL 44x44 minimum from the UX/UI rule set;
+   the icon inside stays visually 18px. */
+.ins-sidebar-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: none; background: transparent; color: var(--ink-2); border-radius: 8px; cursor: pointer; }
+.ins-sidebar-iconbtn:hover { background: var(--panel-2); color: var(--ink); }
+
+/* Mobile drawer */
+.ins-sidebar-scrim { display: none; }
+@media (max-width: 720px) {
+  .ins-sidebar { position: fixed; left: 0; top: 0; height: 100vh; transform: translateX(-100%); transition: transform 0.18s ease; }
+  .ins-sidebar.is-mobile-open { transform: translateX(0); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  .ins-sidebar-scrim { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 29; }
+  .ins-sidebar.is-collapsed { width: 232px; }
+  .ins-sidebar.is-collapsed .ins-sidebar-label,
+  .ins-sidebar.is-collapsed .ins-sidebar-email { display: initial; }
+}
+
+/* Top bar */
+.ins-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.ins-brand { display: flex; align-items: center; gap: 12px; }
+.ins-brand h1 { font-size: 18px; font-weight: 700; margin: 0; }
+.ins-brand .meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.06em; }
+.ins-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ins-seg { display: inline-flex; border: 1px solid var(--edge-2); border-radius: 999px; padding: 3px; gap: 2px; }
+.ins-seg button { font-family: inherit; font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--ink-2); background: transparent; border: none; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.ins-seg button[aria-pressed='true'] { background: var(--accent); color: #111; font-weight: 600; }
+.ins-btn { font-family: inherit; font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink); background: transparent; border: 1px solid var(--edge-2); border-radius: 999px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.ins-btn.primary { background: var(--accent); color: #111; border-color: transparent; font-weight: 600; }
+.ins-iconbtn { width: 34px; height: 34px; border-radius: 999px; border: 1px solid var(--edge-2); background: transparent; color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+
+/* .ins-panel base styles moved down to the Products/Media/Forms/Brand block
+   — this is where its final padding/radius/background live. Keep the h2 and
+   .sub styles here since they're shared with older insights views. */
+.ins-panel h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.ins-panel .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.ins-phead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+
+.ins-grid-top { display: grid; grid-template-columns: 5fr 7fr; gap: 14px; margin-bottom: 14px; }
+.ins-hero { display: flex; flex-direction: column; justify-content: space-between; }
+.ins-hero .big { font-size: clamp(52px, 7vw, 84px); font-weight: 800; line-height: 0.92; margin-top: 8px; }
+.ins-hero .big span { color: var(--accent); }
+.ins-hero .cap { font-size: 16px; color: var(--ink-2); margin-top: 8px; }
+.ins-hero .cap b { color: var(--ink); font-weight: 700; }
+.ins-trackbar { height: 10px; border-radius: 6px; background: var(--track); overflow: hidden; margin-top: 16px; }
+.ins-trackbar > i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), #ffa568); }
+.ins-hero .foot { display: flex; justify-content: space-between; margin-top: 9px; }
+.ins-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.ins-kpi .v { font-size: 28px; font-weight: 700; margin-top: 6px; }
+.ins-kpi .k { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.ins-delta { color: var(--good); font-weight: 600; }
+
+.ins-grid-mid { display: grid; grid-template-columns: 5fr 3fr 4fr; gap: 14px; margin-bottom: 14px; }
+
+.ins-arow { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--edge); }
+.ins-arow:first-child { border-top: none; padding-top: 2px; }
+.ins-arow .nm { font-size: 13.5px; }
+.ins-arow .dw { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; }
+.ins-arow .tk { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+.ins-arow .bar { grid-column: 1 / -1; height: 7px; border-radius: 4px; background: var(--track); overflow: hidden; margin-top: 3px; }
+.ins-arow .bar > i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--blue), #6db0f2); }
+
+.ins-ibar { display: flex; flex-direction: column; gap: 13px; }
+.ins-ibar .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.ins-ibar .nm { font-size: 13.5px; }
+.ins-ibar .vv { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink-2); }
+.ins-ibar .t { height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; }
+.ins-ibar .t > i { display: block; height: 100%; border-radius: 5px; }
+
+.ins-vid { padding: 12px 0; border-top: 1px solid var(--edge); }
+.ins-vid:first-child { border-top: none; padding-top: 0; }
+.ins-vid .r1 { display: flex; justify-content: space-between; align-items: baseline; }
+.ins-vid .nm { font-size: 13.5px; }
+.ins-vid .pl { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+.ins-vid .t { height: 7px; border-radius: 4px; background: var(--track); overflow: hidden; margin-top: 8px; }
+.ins-vid .t > i { display: block; height: 100%; border-radius: 4px; background: var(--aqua); }
+.ins-vid .cp { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+.ins svg { display: block; width: 100%; overflow: visible; }
+.ins-axis { font-family: 'IBM Plex Mono', monospace; font-size: 10px; fill: var(--muted); }
+.ins-callouts { display: flex; gap: 22px; margin-top: 12px; flex-wrap: wrap; }
+.ins-callouts .co { font-size: 12px; color: var(--muted); }
+.ins-callouts .co b { display: block; font-size: 18px; color: var(--ink); font-weight: 700; margin-top: 2px; }
+
+/* Per-product row */
+.ins-prod { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.ins-prodcard { border: 1px solid var(--edge); border-radius: 12px; padding: 13px 14px; background: var(--panel-2); }
+.ins-prodcard .pn { font-size: 14px; font-weight: 600; }
+.ins-prodcard .pr { display: flex; gap: 16px; margin-top: 8px; }
+.ins-prodcard .pr .n { font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 600; }
+.ins-prodcard .pr .l { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.ins-table { width: 100%; border-collapse: collapse; }
+.ins-table thead th { text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 0 14px 12px; }
+.ins-table tbody td { padding: 12px 14px; border-top: 1px solid var(--edge); font-size: 13.5px; }
+.ins-who b { font-weight: 600; }
+.ins-who small { display: block; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; margin-top: 2px; }
+.ins-pill { font-family: inherit; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--edge-2); color: var(--ink-2); }
+.ins-exp { color: var(--ink-2); font-size: 12.5px; }
+.ins-tm { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+
+.ins-tip { position: fixed; pointer-events: none; opacity: 0; transition: opacity 0.12s; background: #fff; color: #111; padding: 6px 9px; border-radius: 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; z-index: 60; white-space: nowrap; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+
+@media (max-width: 940px) { .ins-grid-top, .ins-grid-mid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .ins * { transition: none !important; } }
+
+/* ---------- Report (Generate report) — always light, print-friendly ---------- */
+.ins-report-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, 0.5); overflow: auto; display: flex; justify-content: center; }
+.ins-report { width: min(820px, 100%); margin: 24px; background: #fff; color: #14161d; border-radius: 14px; font-family: 'Inter', system-ui, sans-serif; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); overflow: hidden; }
+.ins-report .serif { font-family: 'Inter', system-ui, sans-serif; }
+.ins-report .rbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid #e6e7ee; background: #f6f7f9; }
+.ins-report .rbar .rb { display: flex; gap: 8px; }
+.ins-report .rbtn { font-family: 'Inter', system-ui, sans-serif; font-size: 13px; font-weight: 600; border-radius: 999px; padding: 8px 14px; cursor: pointer; border: 1px solid #d8dae3; background: #fff; color: #14161d; }
+.ins-report .rbtn.primary { background: #4b47b8; color: #fff; border-color: transparent; }
+.ins-report .body { padding: 30px 34px 34px; }
+.ins-report .eyebrow { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #4b47b8; font-weight: 600; }
+.ins-report h1 { font-family: 'Inter', system-ui, sans-serif; font-weight: 700; letter-spacing: -0.02em; font-size: clamp(24px, 3vw, 34px); line-height: 1.14; margin: 8px 0 0; max-width: 24ch; text-wrap: balance; }
+.ins-report h1 b { font-weight: 700; }
+.ins-report .rrates { display: flex; flex-wrap: wrap; gap: 34px; margin: 24px 0; padding: 20px 0; border-top: 1px solid #e6e7ee; border-bottom: 1px solid #e6e7ee; }
+.ins-report .rrate .v { font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 34px; }
+.ins-report .rrate .k { font-size: 12.5px; color: #565b68; margin-top: 4px; }
+.ins-report h3 { font-family: 'Inter', system-ui, sans-serif; font-size: 17px; margin: 22px 0 12px; }
+.ins-report .rrow { display: flex; justify-content: space-between; padding: 7px 0; border-top: 1px solid #f0f1f5; font-size: 14px; }
+.ins-report .rrow:first-of-type { border-top: none; }
+.ins-report .rrow .m { font-variant-numeric: tabular-nums; color: #565b68; }
+.ins-report .rec { margin-top: 22px; padding: 16px 18px; background: #edecfb; border-radius: 10px; font-size: 14.5px; line-height: 1.5; }
+.ins-report .rec b { color: #4b47b8; }
+.ins-report .foot { margin-top: 22px; font-size: 12px; color: #8b909c; }
+
+@media print {
+  .ins-report-scrim { position: static; background: #fff; }
+  .ins-report { box-shadow: none; margin: 0; width: 100%; }
+  .ins-report .rbar { display: none; }
+}
+
+.ins-leads .ins-leadsrow { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.ins-leads .ins-num.big { font-size: clamp(40px, 6vw, 64px); font-weight: 800; line-height: 0.92; }
+.ins-leads .ins-num.big span { color: var(--accent); }
+.ins-leads .cap { font-size: 15px; color: var(--ink-2); max-width: 52ch; line-height: 1.5; margin: 0; }
+.ins-leads .cap b { color: var(--ink); font-weight: 700; }
+
+/* v2 — shows / tablets management */
+.ins-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 70; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }
+.ins-modal { width: min(460px, 94vw); background: var(--panel); border: 1px solid var(--edge-2); border-radius: 14px; padding: 22px 22px 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+.ins-drawer { width: min(560px, 96vw); background: var(--panel); border: 1px solid var(--edge-2); border-radius: 14px; padding: 20px 22px 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+.ins-field { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 9px 12px; font-family: inherit; font-size: 14px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--edge-2); border-radius: 9px; }
+.ins-field:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ins-linkrow { display: flex; gap: 8px; align-items: center; }
+.ins-linkrow .ins-field { margin-top: 0; }
+.ins-tablet { border: 1px solid var(--edge); border-radius: 11px; padding: 12px 14px; margin-top: 12px; background: var(--panel-2); }
+.ins-tabletbody { display: flex; gap: 14px; align-items: center; margin-top: 10px; }
+@media (max-width: 520px) { .ins-tabletbody { flex-direction: column; align-items: stretch; } }
+
+/* ============================================================
+   Dashboard redesign — Vercel-style IA + Inter type system.
+   Rules below intentionally override the earlier .ins-btn/.ins-seg.
+   ============================================================ */
+
+/* Buttons — clean hierarchy, Inter (not mono/uppercase) */
+.ins-btn {
+  font-family: 'Inter', system-ui, sans-serif; font-size: 13px; font-weight: 500;
+  letter-spacing: 0; text-transform: none; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--edge-2); border-radius: 8px;
+  padding: 7px 12px; min-height: 34px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+  transition: background 0.12s, border-color 0.12s, opacity 0.12s;
+}
+.ins-btn:hover { background: var(--panel-2); border-color: var(--muted); }
+.ins-btn.primary { background: var(--accent); color: #14110a; border-color: transparent; font-weight: 600; }
+.ins-btn.primary:hover { filter: brightness(1.05); background: var(--accent); }
+.ins-btn.ghost { background: transparent; border-color: transparent; color: var(--ink-2); }
+.ins-btn.ghost:hover { background: var(--panel-2); color: var(--ink); }
+.ins-btn:disabled { opacity: 0.45; cursor: default; }
+.ins-btn:disabled:hover { background: var(--panel); border-color: var(--edge-2); }
+
+/* .ins-select moved to the shared design tokens block above so every select
+   uses --control-h and the same custom chevron. */
+.ins-seg button { font-family: 'Inter', system-ui, sans-serif; font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+.ins-seg button[aria-pressed='true'] { background: var(--panel); color: var(--ink); border-radius: 999px; }
+
+/* Top bar */
+.ins-topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 22px; background: var(--bg); border-bottom: 1px solid var(--edge); }
+.ins-logo { display: inline-flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; }
+.ins-wordmark { display: block; height: 28px; width: auto; }
+.ins-topbar-right { display: flex; align-items: center; gap: 10px; }
+.ins-account { display: flex; align-items: center; gap: 10px; }
+.ins-account-email { font-size: 13px; color: var(--ink-2); }
+@media (max-width: 560px) { .ins-account-email { display: none; } }
+
+/* .ins-topnav* was removed — sidebar navigation replaced it (see .ins-sidebar-*). */
+
+/* Page scaffolding */
+.ins-page { padding-top: 8px; }
+.ins-pagehead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.ins-h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+.ins-h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.ins-sub { font-size: 14px; color: var(--ink-2); margin: 4px 0 0; }
+
+/* Event cards */
+.ins-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.ins-card { text-align: left; background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 16px 16px 14px; cursor: pointer; transition: border-color 0.12s, transform 0.12s; }
+.ins-card:hover { border-color: var(--muted); transform: translateY(-1px); }
+.ins-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ins-card-name { font-size: 15px; font-weight: 600; }
+.ins-card-open { font-size: 13px; color: var(--muted); }
+.ins-card-dates { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.ins-card-stats { display: flex; gap: 28px; margin-top: 16px; }
+.ins-card-stats .ins-num { font-size: 22px; font-weight: 700; display: block; }
+.ins-card-stat-l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* Shared design tokens */
+.ins { --control-h: 40px; --radius-md: 8px; }
+
+/* Global keyboard focus — every interactive control uses this instead of a
+   per-widget outline so the accent color reads consistently. */
+.ins :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: inherit; }
+
+/* Form controls (inputs + textarea + shared select — see .ins-select below) */
+.ins-input { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; height: var(--control-h); padding: 0 12px; font-family: inherit; font-size: 14px; line-height: 1.4; background: var(--panel); border: 1px solid var(--edge); border-radius: var(--radius-md); color: var(--ink); }
+.ins-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }
+textarea.ins-input { height: auto; min-height: 72px; padding: 10px 12px; font-family: inherit; resize: vertical; }
+
+/* Native <select> replacement — custom chevron with breathing room. */
+.ins-select { display: inline-block; box-sizing: border-box; height: var(--control-h); padding: 0 34px 0 12px; font-family: inherit; font-size: 14px; line-height: 1.4; background-color: var(--panel); background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2380858e' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 8l4 4 4-4'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; background-size: 14px 14px; border: 1px solid var(--edge); border-radius: var(--radius-md); color: var(--ink); -webkit-appearance: none; appearance: none; cursor: pointer; }
+.ins-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }
+
+.ins-num-small { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: 0.04em; }
+
+/* Reduced motion — kill the sidebar collapse animation and any css transitions
+   on the shell chrome. Keeps our small transitions (hover, focus) intact. */
+@media (prefers-reduced-motion: reduce) {
+  .ins-sidebar { transition: none; }
+  .ins-sidebar-link, .ins-btn { transition: none; }
+}
+
+/* Panels used by Products / Media / Forms / Brand editors */
+.ins-panel { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; }
+.ins-panel + .ins-panel { margin-top: 14px; }
+.ins-brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; }
+@media (max-width: 720px) { .ins-brand-grid { grid-template-columns: 1fr; } }
+/* Grid-scoped correction: the sibling-margin rule above is meant for stacked
+   panels; inside .ins-brand-grid the two panels sit side-by-side and that
+   margin would push the second panel 14px down inside its cell — the exact
+   height mismatch the user reported. Kill the margin only inside the grid;
+   `gap` already handles both the horizontal (desktop) and vertical (mobile
+   stack) spacing. `height: 100%` + `align-self: stretch` are belt-and-
+   suspenders so a future rule tweak on `align-items` can't regress this. */
+.ins-brand-grid > .ins-panel + .ins-panel { margin-top: 0; }
+.ins-brand-grid > .ins-panel { height: 100%; align-self: stretch; }
+/* Brand-panel canvas — both sides get a matching bordered box so the two
+   panels read as one row with equivalent visual weight. Left holds the
+   preview pill, right holds the logo dropzone. Both flex-grow so height
+   tracks whichever panel has more chrome above it. */
+.ins-brand-grid .ins-dropzone,
+.ins-brand-grid .ins-preview-box { flex: 1; min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px; border: 1.5px dashed var(--edge-2); border-radius: 12px; background: var(--panel-2); }
+.ins-brand-grid .ins-preview-box { background: var(--panel-2); }
+.ins-brand-contrast { line-height: 1.4; font-size: 12.5px; }
+/* Swatch + hex text input on one aligned row */
+.ins-hex-row { display: grid; grid-template-columns: var(--control-h) 1fr; gap: 8px; align-items: center; margin-top: 6px; }
+.ins-swatch { width: var(--control-h); height: var(--control-h); padding: 0; border: 1px solid var(--edge); border-radius: 8px; background: transparent; cursor: pointer; flex-shrink: 0; overflow: hidden; }
+.ins-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+.ins-swatch::-webkit-color-swatch { border: none; border-radius: 6px; }
+.ins-brand-preview { border-radius: 999px; padding: 12px 22px; font-weight: 600; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+.ins-dropzone { margin-top: 12px; padding: 24px; border: 1.5px dashed var(--edge-2); border-radius: 12px; text-align: center; color: var(--ink-2); background: var(--panel-2); }
+.ins-dropzone.is-drag { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--panel)); color: var(--ink); }
+.ins-logo-preview { max-height: 96px; max-width: 100%; margin-bottom: 8px; }
+.ins-warn { color: #c0341d; font-size: 13px; }
+.ins-ok { color: #1a8f47; font-size: 13px; }
+.ins-badge { font-family: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--ink); padding: 3px 10px; border-radius: 999px; }
+.ins-fieldrow { padding: 14px 0; border-top: 1px solid var(--edge); }
+.ins-fieldrow:first-of-type { border-top: none; }
+.ins-crumb a { color: var(--ink-2); text-decoration: none; }
+.ins-crumb a:hover { color: var(--ink); }
+
+/* Tabs (still used by legacy Insights tabs elsewhere) */
+.ins-tabs { display: flex; gap: 4px; padding: 4px; margin: 12px 0; background: var(--panel-2); border-radius: 10px; width: fit-content; }
+.ins-tab { font-family: inherit; font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-2); padding: 8px 14px; border: none; background: transparent; border-radius: 8px; cursor: pointer; }
+.ins-tab:hover:not(:disabled) { color: var(--ink); }
+.ins-tab.is-current { background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 1px var(--edge); }
+.ins-tab:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Stepper — used by the Product editor (Model → Details → Hotspots) */
+.ins-stepper { list-style: none; padding: 0; margin: 16px 0 20px; display: flex; align-items: center; gap: 0; }
+.ins-stepper-item { flex: 1; position: relative; }
+.ins-stepper-item + .ins-stepper-item::before { content: ''; position: absolute; left: -50%; right: 50%; top: 16px; height: 2px; background: var(--edge-2); z-index: 0; }
+.ins-stepper-item.is-done + .ins-stepper-item::before,
+.ins-stepper-item.is-active + .ins-stepper-item::before { background: var(--accent); }
+.ins-stepper-btn { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; background: transparent; border: none; padding: 0; color: var(--ink-2); cursor: pointer; width: 100%; font: inherit; }
+.ins-stepper-btn:disabled { cursor: not-allowed; }
+.ins-stepper-circle { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--panel); color: var(--ink-2); border: 2px solid var(--edge-2); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ins-stepper-item.is-done .ins-stepper-circle { background: var(--accent); color: var(--on-accent, #111); border-color: transparent; }
+.ins-stepper-item.is-active .ins-stepper-circle { background: var(--accent); color: var(--on-accent, #111); border-color: transparent; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent); }
+.ins-stepper-label { font-size: 12px; font-weight: 500; color: var(--ink-2); }
+.ins-stepper-item.is-active .ins-stepper-label,
+.ins-stepper-item.is-done .ins-stepper-label { color: var(--ink); }
+.ins-stepper-nav { display: flex; justify-content: space-between; margin-top: 16px; gap: 8px; }
+
+/* Hotspot picker */
+.ins-hp-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-top: 12px; }
+@media (max-width: 900px) { .ins-hp-grid { grid-template-columns: 1fr; } }
+.ins-hp-viewer { height: 460px; background: var(--panel-2); border: 1px solid var(--edge); border-radius: 10px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+.ins-hp-viewer model-viewer { flex: 1; }
+.ins-hp-dot { position: absolute; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--on-accent, #111); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); font-size: 12px; font-weight: 700; cursor: pointer; }
+.ins-hp-dot.is-selected { transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+.ins-hp-side { padding: 12px; background: var(--panel); border: 1px solid var(--edge); border-radius: 10px; }
+.ins-hp-list { list-style: none; padding: 0; margin: 14px 0 0; border-top: 1px solid var(--edge); }
+.ins-hp-list li { border-bottom: 1px solid var(--edge); }
+.ins-hp-listbtn { width: 100%; text-align: left; background: transparent; border: none; padding: 10px 6px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--ink); }
+.ins-hp-listbtn:hover { background: var(--panel-2); }
+.ins-hp-listbtn.is-selected { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ins-hp-listnum { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--on-accent, #111); font-size: 11px; font-weight: 700; flex-shrink: 0; }
+
+/* Media grid */
+.ins-media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
+.ins-media-tile { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--panel-2); border: 1px solid var(--edge); border-radius: 10px; }
+.ins-media-thumb { width: 100%; aspect-ratio: 16/10; object-fit: cover; border-radius: 6px; background: var(--panel); }
+.ins-media-meta { display: flex; flex-direction: column; gap: 2px; padding: 2px; }
+.ins-media-title { font-size: 13px; font-weight: 600; }
+
+/* Multi-select chip picker (new-event modal) */
+.ins-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ins-picker-chip { font-family: inherit; font-size: 13px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--edge); background: transparent; color: var(--ink); cursor: pointer; }
+.ins-picker-chip:hover:not(:disabled) { border-color: var(--muted); }
+.ins-picker-chip.is-on { background: var(--accent); color: var(--on-accent, #111); border-color: transparent; font-weight: 600; }
+.ins-picker-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ins-empty { text-align: center; padding: 48px 20px; max-width: 480px; margin: 0 auto; }
+.ins-empty-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; color: var(--muted); margin-bottom: 10px; }
+.ins-empty-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; }
+.ins-empty-body { font-size: 14px; color: var(--ink-2); line-height: 1.55; margin: 0 0 16px; }
+.ins-empty-note { font-size: 13px; color: var(--muted); margin: 14px 0 0; }
+.ins-empty-note a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--edge-2); }
+.ins-empty-note a:hover { color: var(--ink); border-bottom-color: var(--muted); }
+
+/* Pinned informational card (e.g. "Default form (built-in)") */
+.ins-card.is-default { background: var(--panel-2); border-style: dashed; cursor: default; }
+.ins-card.is-default:hover { transform: none; border-color: var(--edge-2); }
+
+/* Form editor: builder + kiosk preview side-by-side */
+.ins-form-grid { display: grid; grid-template-columns: 1fr minmax(320px, 380px); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .ins-form-grid { grid-template-columns: 1fr; } }
+.ins-form-preview { position: sticky; top: 20px; }
+.ins-form-preview-label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+
+.ins-kiosk-preview { background: #f4f5f7; color: #1c1e22; border: 1px solid #dcdee3; border-radius: 12px; padding: 20px; box-shadow: 0 12px 32px rgba(0,0,0,.15); }
+.ins-kp-head { margin-bottom: 14px; }
+.ins-kp-title { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.ins-kp-sub { font-size: 12px; color: #6a6f78; margin-top: 2px; }
+.ins-kp-fieldlabel { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #7a7f88; margin-top: 12px; }
+.ins-kp-input { height: 34px; background: #fff; border: 1px solid #cdd0d6; border-radius: 8px; margin-top: 4px; }
+.ins-kp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ins-kp-chip { display: inline-block; padding: 6px 12px; border: 1px solid #cdd0d6; border-radius: 999px; font-size: 12px; background: #fff; color: #1c1e22; }
+.ins-kp-chip:first-child { background: var(--accent); color: var(--on-accent, #111); border-color: transparent; font-weight: 600; }
+.ins-kp-consent { display: flex; gap: 8px; margin-top: 14px; font-size: 11.5px; color: #55595f; line-height: 1.4; }
+.ins-kp-checkbox { width: 14px; height: 14px; border: 1.5px solid #a0a3aa; border-radius: 3px; flex-shrink: 0; margin-top: 1px; }
+.ins-kp-submit { margin-top: 14px; padding: 12px; background: var(--accent); color: var(--on-accent, #111); font-weight: 600; text-align: center; border-radius: 999px; font-size: 13px; }
+.ins-kp-note { text-align: center; font-size: 10.5px; color: #8a8e94; margin-top: 8px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.06em; }
+
+/* Detail head + breadcrumb + tabs */
+.ins-detailhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.ins-crumb { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.ins-crumb button { background: none; border: none; color: var(--ink-2); cursor: pointer; font: inherit; padding: 0; }
+.ins-crumb button:hover { color: var(--ink); }
+.ins-crumb-sep { color: var(--muted); }
+.ins-crumb-cur { font-weight: 600; color: var(--ink); }
+.ins-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--edge); margin-bottom: 18px; }
+.ins-tabs button { background: none; border: none; border-bottom: 2px solid transparent; color: var(--ink-2); cursor: pointer; font-size: 14px; font-weight: 500; padding: 10px 4px; margin-right: 16px; }
+.ins-tabs button.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+/* Filter bar (filters left, actions right) */
+.ins-filterbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.ins-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ins-filters .ins-label { margin-right: 2px; }
+.ins-actions { display: flex; align-items: center; gap: 8px; }
+
+.ins-tablet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+/* Tablet rows on a single line; QR moved to a popup */
+.ins-tablet-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.ins-tablet-row .ins-field { flex: 1; min-width: 0; margin-top: 0; }
+.ins-tablet-row .ins-btn { white-space: nowrap; }
+/* Prevent rubber-band overscroll from revealing the layer behind the fixed app
+   (the "background color change" seen at the top/bottom of the events page). */
+.ins { overscroll-behavior: none; }

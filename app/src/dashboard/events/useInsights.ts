@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { aggregate, filterEvents, showDays, computeDeltas, type AnalyticsEvent, type Aggregates, type Deltas } from '../analytics';
+import { aggregate, filterEvents, showDays, computeDeltas, type AnalyticsEvent, type Aggregates, type Deltas } from '../../analytics';
 
 export function fmtDay(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });

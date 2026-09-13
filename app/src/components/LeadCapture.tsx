@@ -1,5 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useKioskStore, CONSENT_TEXT } from '../store/kioskStore';
+import { getRuntimeForm } from '../kioskBoot';
+
+// Very loose "looks like an email" check — one @, at least one dot after it,
+// no whitespace. The server does the real validation with z.string().email().
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function looksLikeEmail(v: string): boolean {
+  return EMAIL_RE.test(v.trim());
+}
 
 // Where the exhibitor's privacy notice lives. Falls back to the Lathe notice
 // until a real show sets its own per-show privacy URL via env.
@@ -42,10 +50,22 @@ export function LeadCaptureForm() {
   const leadEmail = useKioskStore((s) => s.leadEmail);
   const leadInterest = useKioskStore((s) => s.leadInterest);
   const leadConsent = useKioskStore((s) => s.leadConsent);
+  const leadAnswers = useKioskStore((s) => s.leadAnswers);
   const setLeadField = useKioskStore((s) => s.setLeadField);
+  const setLeadAnswer = useKioskStore((s) => s.setLeadAnswer);
   const setLeadConsent = useKioskStore((s) => s.setLeadConsent);
   const submitLead = useKioskStore((s) => s.submitLead);
   const closeLead = useKioskStore((s) => s.closeLead);
+  // The org's custom questions arrive at kiosk boot. When present we still show
+  // the built-in name/email — those are the system fields — plus each custom
+  // question below them. When absent we render the legacy Area-of-interest
+  // pills so existing pilot events keep behaving exactly as they did.
+  const form = getRuntimeForm();
+
+  // On-blur email format hints for the built-in email field and any custom
+  // email-kind question. `null` = pristine (nothing shown), string = error copy.
+  const [emailHint, setEmailHint] = useState<string | null>(null);
+  const [answerHints, setAnswerHints] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     if (!leadDone) return;
@@ -94,33 +114,88 @@ export function LeadCaptureForm() {
               Email
               <input
                 value={leadEmail}
-                onChange={(e) => setLeadField('leadEmail', e.target.value)}
+                onChange={(e) => { setLeadField('leadEmail', e.target.value); if (emailHint) setEmailHint(null); }}
+                onBlur={(e) => setEmailHint(e.target.value && !looksLikeEmail(e.target.value) ? "That doesn't look like a valid email." : null)}
                 type="email"
                 className="focus-ring block w-full box-border mt-1.5 px-3.5 py-3 font-sans text-base bg-white border border-line rounded-[10px] text-graphite"
               />
+              {emailHint && <span className="block mt-1 text-[12px] font-sans text-[#c0341d] normal-case tracking-normal">{emailHint}</span>}
             </label>
 
-            <div className="mt-3.5 font-mono text-[10px] tracking-[0.16em] uppercase text-graphite/55">
-              Area of interest
-            </div>
-            <div className="flex gap-2 mt-2 flex-wrap">
-              {INTERESTS.map((label) => {
-                const selected = leadInterest === label;
-                return (
-                  <button
-                    key={label}
-                    onClick={() => setLeadField('leadInterest', label)}
-                    className={
-                      'focus-ring min-h-11 px-4 whitespace-nowrap rounded-full font-sans text-[15px] cursor-pointer transition-colors border ' +
-                      (selected ? 'text-graphite border-transparent font-semibold' : 'bg-transparent text-graphite border-line')
-                    }
-                    style={selected ? { background: 'var(--accent)' } : undefined}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+            {form ? (
+              form.fields.map((f) => (
+                <div key={f.id} className="mt-3.5">
+                  <div className="font-mono text-[10px] tracking-[0.16em] uppercase text-graphite/55">
+                    {f.label}{f.required ? ' *' : ''}
+                  </div>
+                  {f.kind === 'single_select' ? (
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      {f.options.map((opt) => {
+                        const selected = leadAnswers[f.id] === opt;
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setLeadAnswer(f.id, opt)}
+                            className={
+                              'focus-ring min-h-11 px-4 whitespace-nowrap rounded-full font-sans text-[15px] cursor-pointer transition-colors border ' +
+                              (selected ? 'text-graphite border-transparent font-semibold' : 'bg-transparent text-graphite border-line')
+                            }
+                            style={selected ? { background: 'var(--accent)' } : undefined}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        type={f.kind === 'email' ? 'email' : 'text'}
+                        value={leadAnswers[f.id] ?? ''}
+                        onChange={(e) => {
+                          setLeadAnswer(f.id, e.target.value);
+                          if (answerHints[f.id]) setAnswerHints((h) => ({ ...h, [f.id]: null }));
+                        }}
+                        onBlur={(e) => {
+                          if (f.kind !== 'email') return;
+                          const v = e.target.value;
+                          setAnswerHints((h) => ({ ...h, [f.id]: v && !looksLikeEmail(v) ? "That doesn't look like a valid email." : null }));
+                        }}
+                        className="focus-ring block w-full box-border mt-1.5 px-3.5 py-3 font-sans text-base bg-white border border-line rounded-[10px] text-graphite"
+                      />
+                      {answerHints[f.id] && (
+                        <span className="block mt-1 text-[12px] font-sans text-[#c0341d] normal-case tracking-normal">{answerHints[f.id]}</span>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="mt-3.5 font-mono text-[10px] tracking-[0.16em] uppercase text-graphite/55">
+                  Area of interest
+                </div>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {INTERESTS.map((label) => {
+                    const selected = leadInterest === label;
+                    return (
+                      <button
+                        key={label}
+                        onClick={() => setLeadField('leadInterest', label)}
+                        className={
+                          'focus-ring min-h-11 px-4 whitespace-nowrap rounded-full font-sans text-[15px] cursor-pointer transition-colors border ' +
+                          (selected ? 'text-graphite border-transparent font-semibold' : 'bg-transparent text-graphite border-line')
+                        }
+                        style={selected ? { background: 'var(--accent)' } : undefined}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {/* GDPR opt-in — unticked by default; submit is gated on it in the
                 store. Records the exact wording + version alongside the lead. */}

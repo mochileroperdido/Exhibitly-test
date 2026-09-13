@@ -10,8 +10,8 @@ export interface Hotspot {
 
 export interface MediaItem {
   id: string;
-  /** Only 'video' is built today; typed as a union so photos can be added later. */
-  type: 'video';
+  /** Kiosk renders 'video' as <video>, 'image' as <img>. */
+  type: 'video' | 'image';
   src: string;
   /** Optional poster still; when absent the <video> shows its own first frame. */
   poster?: string;

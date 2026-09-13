@@ -1,6 +1,7 @@
-// Global top bar for the dashboard: brand (→ events home) on the left, theme +
-// account on the right. Deliberately holds no filters or feature actions — those
-// live inside each view, so the top bar reads as pure navigation.
+// Compact header used only by the offline DemoView (no session, no navigation
+// surface). The authenticated dashboard uses the sidebar in `Sidebar.tsx`
+// instead. Kept as a stand-alone component so the demo path doesn't have to
+// spin up the full sidebar (which assumes hash-routed sections).
 export function TopBar({
   email,
   theme,
@@ -16,7 +17,7 @@ export function TopBar({
 }) {
   return (
     <header className="ins-topbar">
-      <button className="ins-logo" onClick={onHome} aria-label="Lathe — all events">
+      <button className="ins-logo" onClick={onHome} aria-label="Lathe">
         <img
           className="ins-wordmark"
           src={

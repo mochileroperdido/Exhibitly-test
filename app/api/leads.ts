@@ -15,6 +15,10 @@ const LeadSchema = z.object({
   alsoViewed: z.array(z.string().max(120)).max(20).default([]),
   sessionId: z.string().max(64).optional(),
   productKey: z.string().max(64).optional(),
+  // Dynamic-form answers keyed by form_field.id. Bounded to keep a bad client
+  // from writing arbitrary JSON; server-side validation against form_fields
+  // happens below.
+  answers: z.record(z.string().max(64), z.string().max(400)).optional(),
   consentGiven: z.literal(true), // hard gate
   consentText: z.string().min(1).max(500),
   consentVersion: z.string().min(1).max(20),
@@ -38,6 +42,43 @@ export default async function handler(req: Request): Promise<Response> {
   if (!parsed.success) return jsonResponse(422, { error: 'invalid', issues: parsed.error.issues });
   const lead = parsed.data;
 
+  // Validate dynamic answers against the show's form (or the org default). We
+  // fail closed: any field id that doesn't belong to this show's form is
+  // rejected so a client can't spray arbitrary keys into leads.answers.
+  const answers = lead.answers ?? {};
+  let validatedAnswers: Record<string, string> = {};
+  if (Object.keys(answers).length > 0) {
+    const { data: showRow } = await db
+      .from('shows').select('form_id').eq('id', kiosk.show_id).maybeSingle();
+    let formId = (showRow?.form_id as string | null) ?? null;
+    if (!formId) {
+      const { data: defRow } = await db
+        .from('forms').select('id').eq('org_id', kiosk.org_id).eq('is_default', true).maybeSingle();
+      formId = (defRow?.id as string | null) ?? null;
+    }
+    if (formId) {
+      const { data: fields } = await db
+        .from('form_fields').select('id, kind, required, options').eq('form_id', formId);
+      const byId = new Map<string, { kind: string; required: boolean; options: unknown }>(
+        (fields ?? []).map((f) => [f.id as string, { kind: f.kind as string, required: f.required as boolean, options: f.options }]),
+      );
+      const emailSchema = z.string().email();
+      for (const [fid, val] of Object.entries(answers)) {
+        const spec = byId.get(fid);
+        if (!spec) continue; // drop unknown keys silently
+        if (spec.kind === 'single_select') {
+          const opts = Array.isArray(spec.options) ? spec.options as string[] : [];
+          if (!opts.includes(val)) continue; // drop values outside the allowed set
+        }
+        if (spec.kind === 'email') {
+          const parsed = emailSchema.safeParse(val.trim());
+          if (!parsed.success) continue; // drop malformed emails
+        }
+        validatedAnswers[fid] = val;
+      }
+    }
+  }
+
   const { error } = await db.from('leads').insert({
     org_id: kiosk.org_id,
     show_id: kiosk.show_id,
@@ -49,6 +90,7 @@ export default async function handler(req: Request): Promise<Response> {
     interest: lead.interest ?? null,
     explored: lead.explored,
     also_viewed: lead.alsoViewed,
+    answers: validatedAnswers,
     consent_given: lead.consentGiven,
     consent_text: lead.consentText,
     consent_version: lead.consentVersion,

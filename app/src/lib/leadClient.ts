@@ -24,6 +24,9 @@ export interface LeadPayload {
   alsoViewed?: string[];
   sessionId?: string;
   productKey?: string;
+  /** Answers to the org's custom lead form, keyed by form_field.id. Optional
+   *  because the built-in default form has none. */
+  answers?: Record<string, string>;
   consentGiven: true;
   consentText: string;
   consentVersion: string;
