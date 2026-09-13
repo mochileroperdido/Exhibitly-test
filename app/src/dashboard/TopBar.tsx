@@ -1,17 +1,33 @@
-// Global top bar for the dashboard: brand (→ events home) on the left, theme +
-// account on the right. Deliberately holds no filters or feature actions — those
-// live inside each view, so the top bar reads as pure navigation.
+// Global top bar for the dashboard: brand (→ events home) on the left, section
+// nav in the middle, theme + account on the right. Deliberately holds no
+// filters or feature actions — those live inside each view, so the top bar
+// reads as pure navigation.
+
+export type DashSection = 'events' | 'products' | 'media' | 'forms' | 'brand';
+
+const SECTIONS: { id: DashSection; label: string; hash: string }[] = [
+  { id: 'events', label: 'Events', hash: '#/events' },
+  { id: 'products', label: 'Products', hash: '#/products' },
+  { id: 'media', label: 'Media', hash: '#/media' },
+  { id: 'forms', label: 'Forms', hash: '#/forms' },
+  { id: 'brand', label: 'Brand', hash: '#/brand' },
+];
+
 export function TopBar({
   email,
   theme,
+  section,
   onToggleTheme,
   onHome,
+  onNav,
   onSignOut,
 }: {
   email?: string | null;
   theme: 'dark' | 'light';
+  section?: DashSection;
   onToggleTheme: () => void;
   onHome: () => void;
+  onNav?: (hash: string) => void;
   onSignOut?: () => void;
 }) {
   return (
@@ -27,6 +43,20 @@ export function TopBar({
           alt="Lathe"
         />
       </button>
+      {onNav && (
+        <nav className="ins-topnav" aria-label="Sections">
+          {SECTIONS.map((s) => (
+            <button
+              key={s.id}
+              className={'ins-topnav-link' + (section === s.id ? ' is-current' : '')}
+              onClick={() => onNav(s.hash)}
+              aria-current={section === s.id ? 'page' : undefined}
+            >
+              {s.label}
+            </button>
+          ))}
+        </nav>
+      )}
       <div className="ins-topbar-right">
         <button className="ins-iconbtn" aria-label="Toggle theme" onClick={onToggleTheme}>
           {theme === 'dark' ? (

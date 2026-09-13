@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Aggregates, Deltas } from '../analytics';
+import type { Aggregates, Deltas } from '../../analytics';
 import { TrafficBars } from './charts';
 
 const HOUR_MARKERS: Record<string, string> = { '2p': 'Product talk', '4p': 'Prize draw' };

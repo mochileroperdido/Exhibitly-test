@@ -3,8 +3,8 @@ import { Stage } from './components/Stage';
 
 // The dashboard (and its Supabase client) is lazy-loaded so it stays out of the
 // kiosk's initial bundle — the booth PWA ships lean. Auth gating lives inside
-// InsightsApp: in live mode it requires a Supabase magic-link session.
-const InsightsApp = lazy(() => import('./insights/InsightsApp').then((m) => ({ default: m.InsightsApp })));
+// DashboardApp: in live mode it requires a Supabase magic-link session.
+const DashboardApp = lazy(() => import('./dashboard/DashboardApp').then((m) => ({ default: m.DashboardApp })));
 
 function useHash() {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -24,7 +24,19 @@ function useHash() {
 function surfaceForHost(host: string, hash: string): 'dashboard' | 'kiosk' {
   if (host.startsWith('dashboard.') || host.startsWith('app.')) return 'dashboard';
   if (host.startsWith('kiosk.')) return 'kiosk';
-  return hash.startsWith('#/insights') || hash.startsWith('#/e/') ? 'dashboard' : 'kiosk';
+  // #/insights kept as an alias so any bookmarked links still reach the dashboard;
+  // it's redirected to #/events inside DashboardApp.
+  return (
+    hash.startsWith('#/events') ||
+    hash.startsWith('#/insights') ||
+    hash.startsWith('#/e/') ||
+    hash.startsWith('#/products') ||
+    hash.startsWith('#/media') ||
+    hash.startsWith('#/forms') ||
+    hash.startsWith('#/brand')
+  )
+    ? 'dashboard'
+    : 'kiosk';
 }
 
 function App() {
@@ -32,7 +44,7 @@ function App() {
   if (surfaceForHost(window.location.hostname, hash) === 'dashboard') {
     return (
       <Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#0b0d12' }} />}>
-        <InsightsApp />
+        <DashboardApp />
       </Suspense>
     );
   }

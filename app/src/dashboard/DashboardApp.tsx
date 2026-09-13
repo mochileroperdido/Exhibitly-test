@@ -1,17 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import './insights.css';
 import type { Session } from '@supabase/supabase-js';
 import { allEvents, PRODUCTS } from '../analytics';
 import { isSupabaseConfigured, getSupabase } from '../lib/supabase';
-import { useInsights, fmtDay } from './useInsights';
+import { useInsights, fmtDay } from './events/useInsights';
 import { Login } from './Login';
-import { TopBar } from './TopBar';
-import { EventsHome } from './EventsHome';
-import { EventDetail } from './EventDetail';
-import { CommandDashboard } from './CommandDashboard';
-import { ReportView } from './ReportView';
+import { TopBar, type DashSection } from './TopBar';
+import { EventsHome } from './events/EventsHome';
+import { EventDetail } from './events/EventDetail';
+import { CommandDashboard } from './events/CommandDashboard';
+import { ReportView } from './events/ReportView';
+import { ProductsPage } from './products/ProductsPage';
+import { MediaPage } from './media/MediaPage';
+import { FormsPage } from './forms/FormsPage';
+import { BrandPage } from './brand/BrandPage';
 
-const HOME_HASH = '#/insights';
+const HOME_HASH = '#/events';
 const go = (h: string) => { window.location.hash = h; };
 
 function useHash() {
@@ -24,7 +28,7 @@ function useHash() {
   return hash;
 }
 
-export function InsightsApp() {
+export function DashboardApp() {
   const live = isSupabaseConfigured;
   const hash = useHash();
 
@@ -43,29 +47,46 @@ export function InsightsApp() {
     return () => sub.subscription.unsubscribe();
   }, [live]);
 
+  // #/insights is kept as an alias to the old events home. Silent redirect so
+  // any bookmarked link still lands people in the right place.
+  useEffect(() => {
+    if (hash.startsWith('#/insights')) go(HOME_HASH);
+  }, [hash]);
+
   if (!live) return <DemoView theme={theme} onToggleTheme={toggleTheme} />;
   if (session === undefined) return <div className="ins" data-theme={theme} style={{ minHeight: '100vh' }} />;
   if (session === null) return <Login theme={theme} />;
 
   const eventMatch = /^#\/e\/([^/?]+)/.exec(hash);
+  const section: DashSection = eventMatch
+    ? 'events'
+    : hash.startsWith('#/products') ? 'products'
+    : hash.startsWith('#/media') ? 'media'
+    : hash.startsWith('#/forms') ? 'forms'
+    : hash.startsWith('#/brand') ? 'brand'
+    : 'events';
   const email = session.user?.email;
+
+  let page: ReactNode;
+  if (eventMatch) page = <EventDetail showId={eventMatch[1]} onBack={() => go(HOME_HASH)} />;
+  else if (section === 'products') page = <ProductsPage />;
+  else if (section === 'media') page = <MediaPage />;
+  else if (section === 'forms') page = <FormsPage />;
+  else if (section === 'brand') page = <BrandPage />;
+  else page = <EventsHome onOpen={(id) => go(`#/e/${id}`)} />;
 
   return (
     <div className="ins" data-theme={theme}>
       <TopBar
         email={email}
         theme={theme}
+        section={section}
         onToggleTheme={toggleTheme}
         onHome={() => go(HOME_HASH)}
+        onNav={(h) => go(h)}
         onSignOut={() => getSupabase()?.auth.signOut()}
       />
-      <div className="ins-wrap">
-        {eventMatch ? (
-          <EventDetail showId={eventMatch[1]} onBack={() => go(HOME_HASH)} />
-        ) : (
-          <EventsHome onOpen={(id) => go(`#/e/${id}`)} />
-        )}
-      </div>
+      <div className="ins-wrap">{page}</div>
     </div>
   );
 }

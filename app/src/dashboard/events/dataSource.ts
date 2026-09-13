@@ -1,5 +1,5 @@
-import type { AnalyticsEvent } from '../analytics';
-import { getSupabase } from '../lib/supabase';
+import type { AnalyticsEvent } from '../../analytics';
+import { getSupabase } from '../../lib/supabase';
 
 // Authenticated dashboard data layer. Reads the signed-in user's rows from
 // Supabase (RLS scopes them to their org, combining every kiosk at the show),

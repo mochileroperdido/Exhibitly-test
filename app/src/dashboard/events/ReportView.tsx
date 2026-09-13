@@ -1,4 +1,4 @@
-import type { Aggregates } from '../analytics';
+import type { Aggregates } from '../../analytics';
 
 function fmtTime(ms: number) {
   const s = Math.round(ms / 1000);

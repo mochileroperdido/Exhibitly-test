@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PRODUCTS, type AnalyticsEvent } from '../analytics';
+import { PRODUCTS, type AnalyticsEvent } from '../../analytics';
 import { loadInsights, type LeadRow } from './dataSource';
 import { getShow, listKiosks, kioskLink, type Kiosk } from './shows';
 import { useInsights, fmtDay } from './useInsights';

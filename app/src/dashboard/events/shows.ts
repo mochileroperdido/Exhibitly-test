@@ -1,4 +1,4 @@
-import { getSupabase } from '../lib/supabase';
+import { getSupabase } from '../../lib/supabase';
 
 // Dashboard-side management of shows and their tablets (kiosks). All writes go
 // through supabase-js as the authenticated user; RLS scopes them to the user's
