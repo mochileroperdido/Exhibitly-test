@@ -91,7 +91,9 @@
 .ins-btn.primary { background: var(--accent); color: #111; border-color: transparent; font-weight: 600; }
 .ins-iconbtn { width: 34px; height: 34px; border-radius: 999px; border: 1px solid var(--edge-2); background: transparent; color: var(--ink); cursor: pointer; display: grid; place-items: center; }
 
-.ins-panel { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border: 1px solid var(--edge); border-radius: 16px; padding: 18px; }
+/* .ins-panel base styles moved down to the Products/Media/Forms/Brand block
+   — this is where its final padding/radius/background live. Keep the h2 and
+   .sub styles here since they're shared with older insights views. */
 .ins-panel h2 { font-size: 15px; font-weight: 600; margin: 0; }
 .ins-panel .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
 .ins-phead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
@@ -298,6 +300,15 @@ textarea.ins-input { height: auto; min-height: 72px; padding: 10px 12px; font-fa
 .ins-panel + .ins-panel { margin-top: 14px; }
 .ins-brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; }
 @media (max-width: 720px) { .ins-brand-grid { grid-template-columns: 1fr; } }
+/* Grid-scoped correction: the sibling-margin rule above is meant for stacked
+   panels; inside .ins-brand-grid the two panels sit side-by-side and that
+   margin would push the second panel 14px down inside its cell — the exact
+   height mismatch the user reported. Kill the margin only inside the grid;
+   `gap` already handles both the horizontal (desktop) and vertical (mobile
+   stack) spacing. `height: 100%` + `align-self: stretch` are belt-and-
+   suspenders so a future rule tweak on `align-items` can't regress this. */
+.ins-brand-grid > .ins-panel + .ins-panel { margin-top: 0; }
+.ins-brand-grid > .ins-panel { height: 100%; align-self: stretch; }
 /* Brand-panel canvas — both sides get a matching bordered box so the two
    panels read as one row with equivalent visual weight. Left holds the
    preview pill, right holds the logo dropzone. Both flex-grow so height
