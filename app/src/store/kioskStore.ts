@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { catalog } from '../data/catalog';
 import * as analytics from '../analytics';
 import { queueLead } from '../lib/leadClient';
+import { getRuntimeForm } from '../kioskBoot';
 
 const hotspotTitle = (entryId: string, hotspotId: string) =>
   catalog.find((c) => c.id === entryId)?.hotspots.find((h) => h.id === hotspotId)?.title ?? hotspotId;
@@ -56,6 +57,8 @@ interface KioskState {
   leadEmail: string;
   leadInterest: string;
   leadConsent: boolean;
+  /** Answers to the org's custom form questions, keyed by form_field.id. */
+  leadAnswers: Record<string, string>;
   leadsViewOpen: boolean;
   sessionHotspots: ExploredItem[];
   sessionVideos: ExploredItem[];
@@ -77,6 +80,7 @@ interface KioskState {
   openLead: () => void;
   closeLead: () => void;
   setLeadField: (field: 'leadName' | 'leadEmail' | 'leadInterest', value: string) => void;
+  setLeadAnswer: (fieldId: string, value: string) => void;
   setLeadConsent: (v: boolean) => void;
   submitLead: () => void;
   toggleLeadsView: () => void;
@@ -104,6 +108,7 @@ export const useKioskStore = create<KioskState>()(
       leadEmail: '',
       leadInterest: '',
       leadConsent: false,
+      leadAnswers: {},
       leadsViewOpen: false,
       sessionHotspots: [],
       sessionVideos: [],
@@ -134,6 +139,7 @@ export const useKioskStore = create<KioskState>()(
           leadEmail: '',
           leadInterest: '',
           leadConsent: false,
+          leadAnswers: {},
           sessionHotspots: [],
           sessionVideos: [],
         });
@@ -212,9 +218,11 @@ export const useKioskStore = create<KioskState>()(
           leadEmail: '',
           leadInterest: '',
           leadConsent: false,
+          leadAnswers: {},
         }),
 
       setLeadField: (field, value) => set({ [field]: value } as Partial<KioskState>),
+      setLeadAnswer: (fieldId, value) => set((s) => ({ leadAnswers: { ...s.leadAnswers, [fieldId]: value } })),
       setLeadConsent: (v) => set({ leadConsent: v }),
 
       submitLead: () => {
@@ -224,6 +232,16 @@ export const useKioskStore = create<KioskState>()(
         if (!s.leadName.trim() || !s.leadEmail.trim() || !s.leadConsent) {
           set({ leadError: true });
           return;
+        }
+        // Enforce `required` on the org's custom form fields, if any.
+        const form = getRuntimeForm();
+        if (form) {
+          for (const f of form.fields) {
+            if (f.required && !(s.leadAnswers[f.id] ?? '').trim()) {
+              set({ leadError: true });
+              return;
+            }
+          }
         }
         // Titles were resolved at exploration time (see selectHotspot /
         // selectMedia), so they survive product switches. Everything the
@@ -264,6 +282,7 @@ export const useKioskStore = create<KioskState>()(
           alsoViewed,
           sessionId: analytics.currentSessionId() ?? undefined,
           productKey: primary,
+          answers: Object.keys(s.leadAnswers).length ? s.leadAnswers : undefined,
           consentGiven: true,
           consentText: CONSENT_TEXT,
           consentVersion: CONSENT_VERSION,

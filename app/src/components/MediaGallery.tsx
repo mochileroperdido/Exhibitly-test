@@ -40,17 +40,26 @@ export function MediaGallery({ entry }: { entry: CatalogEntry }) {
         </div>
 
         {active ? (
-          <video
-            key={active.id}
-            src={active.src}
-            poster={active.poster}
-            controls
-            muted
-            autoPlay
-            playsInline
-            onEnded={() => analytics.videoComplete(active.title)}
-            className="mt-4 w-full rounded-lg bg-black max-h-[70vh]"
-          />
+          active.type === 'video' ? (
+            <video
+              key={active.id}
+              src={active.src}
+              poster={active.poster}
+              controls
+              muted
+              autoPlay
+              playsInline
+              onEnded={() => analytics.videoComplete(active.title)}
+              className="mt-4 w-full rounded-lg bg-black max-h-[70vh]"
+            />
+          ) : (
+            <img
+              key={active.id}
+              src={active.src}
+              alt={active.title}
+              className="mt-4 w-full rounded-lg bg-black max-h-[70vh] object-contain"
+            />
+          )
         ) : (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {entry.media.map((m) => (
@@ -62,21 +71,31 @@ export function MediaGallery({ entry }: { entry: CatalogEntry }) {
                 <div className="relative aspect-video bg-black">
                   {/* '#t=0.1' nudges the <video> to render a first frame as a
                       still thumbnail even without a generated poster. */}
-                  <video
-                    src={m.poster ? undefined : `${m.src}#t=0.1`}
-                    poster={m.poster}
-                    muted
-                    playsInline
-                    preload="metadata"
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                  />
-                  <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex items-center justify-center w-12 h-12 rounded-full shadow-[0_2px_10px_rgba(0,0,0,.4)]" style={{ background: 'var(--accent)' }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
-                        <path d="M8 5v14l11-7z" fill="#1c1e22" />
-                      </svg>
+                  {m.type === 'image' ? (
+                    <img
+                      src={m.src}
+                      alt={m.title}
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    />
+                  ) : (
+                    <video
+                      src={m.poster ? undefined : `${m.src}#t=0.1`}
+                      poster={m.poster}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    />
+                  )}
+                  {m.type === 'video' && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="flex items-center justify-center w-12 h-12 rounded-full shadow-[0_2px_10px_rgba(0,0,0,.4)]" style={{ background: 'var(--accent)' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
+                          <path d="M8 5v14l11-7z" fill="#1c1e22" />
+                        </svg>
+                      </span>
                     </span>
-                  </span>
+                  )}
                 </div>
                 <div className="px-3.5 py-3 font-sans text-[15px] font-medium text-graphite">{m.title}</div>
               </button>

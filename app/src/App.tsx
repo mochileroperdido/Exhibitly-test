@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Stage } from './components/Stage';
+import { bootKiosk } from './kioskBoot';
 
 // The dashboard (and its Supabase client) is lazy-loaded so it stays out of the
 // kiosk's initial bundle — the booth PWA ships lean. Auth gating lives inside
@@ -41,13 +42,25 @@ function surfaceForHost(host: string, hash: string): 'dashboard' | 'kiosk' {
 
 function App() {
   const hash = useHash();
-  if (surfaceForHost(window.location.hostname, hash) === 'dashboard') {
+  const surface = surfaceForHost(window.location.hostname, hash);
+  // Fetch the kiosk's dynamic content bundle (products, brand, form) before
+  // mounting <Stage />. `booted` gates the first render so the visitor never
+  // sees the compiled demo catalog flash before the org's real products
+  // arrive. Absent a kiosk key we still fall through immediately (demo mode).
+  const [booted, setBooted] = useState(surface !== 'kiosk');
+  useEffect(() => {
+    if (surface !== 'kiosk') return;
+    void bootKiosk().finally(() => setBooted(true));
+  }, [surface]);
+
+  if (surface === 'dashboard') {
     return (
       <Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#0b0d12' }} />}>
         <DashboardApp />
       </Suspense>
     );
   }
+  if (!booted) return <div style={{ position: 'fixed', inset: 0, background: '#0b0d12' }} />;
   return <Stage />;
 }
 
