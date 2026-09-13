@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { MediaAsset, Product } from '../shared/content';
 import { listMedia, listProducts, createMedia, deleteMedia } from '../shared/content';
 import { uploadAsset, validateFile, describeRules } from '../shared/upload';
+import { loadWithSchemaGuard } from '../shared/schemaGuard';
 import { getSupabase } from '../../lib/supabase';
 
 interface RowWithPreview extends MediaAsset {
@@ -18,7 +19,10 @@ export function MediaPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [prods, media] = await Promise.all([listProducts(), listMedia()]);
+        const [prods, media] = await Promise.all([
+          loadWithSchemaGuard('media:products', () => listProducts(), [] as Product[]),
+          loadWithSchemaGuard('media:media', () => listMedia(), [] as MediaAsset[]),
+        ]);
         setProducts(prods);
         // Pre-sign preview URLs for the grid.
         const db = getSupabase();

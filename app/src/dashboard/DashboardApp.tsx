@@ -5,7 +5,8 @@ import { allEvents, PRODUCTS } from '../analytics';
 import { isSupabaseConfigured, getSupabase } from '../lib/supabase';
 import { useInsights, fmtDay } from './events/useInsights';
 import { Login } from './Login';
-import { TopBar, type DashSection } from './TopBar';
+import { Sidebar, type DashSection } from './Sidebar';
+import { TopBar } from './TopBar';
 import { EventsHome } from './events/EventsHome';
 import { EventDetail } from './events/EventDetail';
 import { CommandDashboard } from './events/CommandDashboard';
@@ -76,17 +77,19 @@ export function DashboardApp() {
   else page = <EventsHome onOpen={(id) => go(`#/e/${id}`)} />;
 
   return (
-    <div className="ins" data-theme={theme}>
-      <TopBar
+    <div className="ins ins-shell" data-theme={theme}>
+      <Sidebar
+        section={section}
         email={email}
         theme={theme}
-        section={section}
-        onToggleTheme={toggleTheme}
-        onHome={() => go(HOME_HASH)}
         onNav={(h) => go(h)}
+        onHome={() => go(HOME_HASH)}
+        onToggleTheme={toggleTheme}
         onSignOut={() => getSupabase()?.auth.signOut()}
       />
-      <div className="ins-wrap">{page}</div>
+      <main className="ins-main">
+        <div className="ins-wrap">{page}</div>
+      </main>
     </div>
   );
 }

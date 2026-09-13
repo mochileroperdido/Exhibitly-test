@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getBrand, saveBrand } from '../shared/content';
 import { uploadAsset, validateFile } from '../shared/upload';
+import { loadWithSchemaGuard } from '../shared/schemaGuard';
 
 // Sanity-checks a "#rrggbb" (or "rrggbb") hex. Returns the normalized #rrggbb
 // or null. Kept in the module so the picker can debounce feedback.
@@ -47,7 +48,7 @@ export function BrandPage() {
   const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
-    getBrand()
+    loadWithSchemaGuard('brand', () => getBrand(), { accentHex: null, logoUrl: null })
       .then((b) => {
         if (b.accentHex) setAccent(b.accentHex);
         if (b.logoUrl) {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormDefinition } from '../shared/content';
 import { listForms, deleteForm } from '../shared/content';
+import { loadWithSchemaGuard } from '../shared/schemaGuard';
 import { FormEditor } from './FormEditor';
 
 // #/forms         → list
@@ -27,7 +28,9 @@ export function FormsPage() {
 
   useEffect(() => {
     if (route.mode !== 'list') return;
-    listForms().then(setForms).catch((e) => setError(e.message ?? 'load failed'));
+    loadWithSchemaGuard('forms', () => listForms(), [] as FormDefinition[])
+      .then(setForms)
+      .catch((e) => setError(e.message ?? 'load failed'));
   }, [route.mode]);
 
   if (route.mode === 'edit') {

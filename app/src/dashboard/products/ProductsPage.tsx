@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Product } from '../shared/content';
 import { listProducts } from '../shared/content';
+import { loadWithSchemaGuard } from '../shared/schemaGuard';
 import { ProductEditor } from './ProductEditor';
 
 function parseRoute(hash: string): { mode: 'list' } | { mode: 'edit'; id: string | null } {
@@ -23,7 +24,9 @@ export function ProductsPage() {
 
   useEffect(() => {
     if (route.mode !== 'list') return;
-    listProducts().then(setProducts).catch((e) => setError(e.message ?? 'load failed'));
+    loadWithSchemaGuard('products', () => listProducts(), [] as Product[])
+      .then(setProducts)
+      .catch((e) => setError(e.message ?? 'load failed'));
   }, [route.mode]);
 
   if (route.mode === 'edit') {

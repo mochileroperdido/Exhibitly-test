@@ -79,6 +79,26 @@ Then in the dashboard:
 The original single `VITE_KIOSK_KEY` still works as a fallback tablet, so nothing
 breaks if a device opens the kiosk with no `?k=` link.
 
+### Self-serve dashboard — Products, Media, Forms, Brand 🟢
+
+Run in order (both idempotent — safe to re-run):
+
+1. `supabase/migrations/0008_content_forms_brand.sql`
+   Adds columns/tables the new dashboard sections read from: `products`
+   goes org-scoped and gains `slug`, `model_bytes`, `triangle_count`,
+   `updated_at`; new `show_products` join, `forms` + `form_fields`,
+   `shows.form_id`, `orgs.brand_accent_hex` + `brand_logo_url`,
+   `leads.answers`. Plus all matching RLS policies and grants.
+2. `supabase/migrations/0009_assets_storage.sql`
+   Creates the private `assets` Storage bucket and its org-membership
+   policies (path convention `{org_id}/{models|media|brand}/…`).
+
+Skipping this step leaves you on the old event-only dashboard: opening
+Products / Media / Forms / Brand will render the empty state, and the
+browser console will log a single
+`[dashboard] migration 0008/0009 not applied — see docs/SETUP.md` per
+section. The customer is expected to run the SQL themselves.
+
 ---
 
 ## 1. Domain — meetlathe.com 🟢

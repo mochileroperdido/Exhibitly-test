@@ -10,6 +10,7 @@ import {
   type Product,
   type FormDefinition,
 } from '../shared/content';
+import { loadWithSchemaGuard } from '../shared/schemaGuard';
 
 // The "projects" screen: every event as a card, plus New event. Entering a card
 // opens its detail view.
@@ -107,8 +108,10 @@ function NewEventModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    listProducts().then(setProducts).catch(() => { /* products optional */ });
-    listForms().then(setForms).catch(() => { /* forms optional */ });
+    loadWithSchemaGuard('events-modal:products', () => listProducts(), [] as Product[])
+      .then(setProducts).catch(() => { /* products optional */ });
+    loadWithSchemaGuard('events-modal:forms', () => listForms(), [] as FormDefinition[])
+      .then(setForms).catch(() => { /* forms optional */ });
   }, []);
 
   function toggleProduct(id: string) {
