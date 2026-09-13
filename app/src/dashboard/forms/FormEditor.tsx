@@ -135,8 +135,12 @@ export function FormEditor({ formId, onDone }: { formId: string | null; onDone: 
                       onChange={(e) => updateField(i, { kind: e.target.value as Draft['kind'], options: e.target.value === 'single_select' ? (f.options.length ? f.options : ['', '']) : [] })}
                     >
                       <option value="short_text">Short text</option>
-                      <option value="email">Email</option>
                       <option value="single_select">Single select</option>
+                      {/* Email is deliberately not offered — the system Email
+                          field is always collected. Existing forms whose kind
+                          is 'email' still render fine because the union type
+                          still lists it. */}
+                      {f.kind === 'email' && <option value="email">Email (legacy)</option>}
                     </select>
                   </label>
                   <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
@@ -145,10 +149,10 @@ export function FormEditor({ formId, onDone }: { formId: string | null; onDone: 
                   </label>
                 </div>
                 <p className="ins-sub" style={{ marginTop: 6, fontSize: 12 }}>
-                  {f.kind === 'email'
-                    ? 'Kiosk validates the format on this field.'
-                    : f.kind === 'single_select'
-                      ? 'Visitors tap one of the pill-shaped options.'
+                  {f.kind === 'single_select'
+                    ? 'Visitors tap one of the pill-shaped options.'
+                    : f.kind === 'email'
+                      ? 'Legacy — the system Email field already collects this. Consider Short text if you meant something else.'
                       : 'Free-form input — accepts anything.'}
                 </p>
 

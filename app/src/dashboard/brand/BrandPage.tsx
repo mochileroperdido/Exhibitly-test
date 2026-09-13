@@ -143,8 +143,9 @@ export function BrandPage() {
             </div>
           </label>
           {normalized && !contrastOK && (
-            <p className="ins-warn" style={{ marginTop: 10 }}>
-              Contrast against auto-picked text ({onAccent}) is {contrast.toFixed(2)}:1 — below the WCAG AA target of 4.5:1. Consider a darker or lighter accent.
+            <p className="ins-warn ins-brand-contrast" style={{ marginTop: 10 }}>
+              <span aria-hidden style={{ marginRight: 6 }}>⚠</span>
+              Contrast {contrast.toFixed(2)}:1 — try a darker accent <span style={{ color: 'var(--muted)' }}>(WCAG AA needs 4.5:1)</span>.
             </p>
           )}
           <div style={{ marginTop: 16 }}>

@@ -36,9 +36,16 @@
 /* Sidebar */
 .ins-sidebar { position: sticky; top: 0; height: 100vh; width: 232px; background: var(--panel); border-right: 1px solid var(--edge); display: flex; flex-direction: column; padding: 12px 10px; transition: width 0.16s ease; z-index: 30; }
 .ins-sidebar.is-collapsed { width: 60px; }
-.ins-sidebar-brand { display: flex; align-items: center; justify-content: center; height: 44px; padding: 0 6px; background: none; border: none; cursor: pointer; margin-bottom: 8px; }
-.ins-sidebar-brand .ins-wordmark { display: block; height: 22px; width: auto; }
-.ins-sidebar-monogram { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; background: var(--accent); color: var(--on-accent, #111); font-weight: 700; font-size: 15px; }
+/* Sidebar brand mark — left-aligned to the same 12px inset as the section
+   icons so it sits in one visual column with the nav. Wordmark scales up
+   to ~30px so it reads as the anchor at the top of the rail. */
+.ins-sidebar-brand { display: flex; align-items: center; justify-content: flex-start; height: 48px; padding: 0 12px; background: none; border: none; cursor: pointer; margin-bottom: 8px; }
+.ins-sidebar-brand .ins-wordmark { display: block; height: 30px; width: auto; }
+/* Real brand glyph in the collapsed state — the favicon SVG. Its path is
+   hardcoded to ink, so on dark theme we invert to keep contrast. */
+.ins-sidebar-monogram { display: block; height: 30px; width: auto; }
+.ins[data-theme="dark"] .ins-sidebar-monogram { filter: invert(1); }
+.ins-sidebar.is-collapsed .ins-sidebar-brand { justify-content: center; padding: 0; }
 .ins-sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding-top: 6px; flex: 1; }
 .ins-sidebar-link { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; border: none; background: transparent; color: var(--ink-2); font: inherit; font-size: 14px; cursor: pointer; text-align: left; position: relative; }
 .ins-sidebar-link:hover { background: var(--panel-2); color: var(--ink); }
@@ -287,10 +294,14 @@ textarea.ins-input { height: auto; min-height: 72px; padding: 10px 12px; font-fa
 }
 
 /* Panels used by Products / Media / Forms / Brand editors */
-.ins-panel { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 18px 20px; }
+.ins-panel { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; }
 .ins-panel + .ins-panel { margin-top: 14px; }
 .ins-brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; }
 @media (max-width: 720px) { .ins-brand-grid { grid-template-columns: 1fr; } }
+/* Brand-panel dropzone stretches so the right panel's height tracks the left
+   even when the contrast warning grows the left one. */
+.ins-brand-grid .ins-dropzone { flex: 1; min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.ins-brand-contrast { line-height: 1.4; font-size: 12.5px; }
 /* Swatch + hex text input on one aligned row */
 .ins-hex-row { display: grid; grid-template-columns: var(--control-h) 1fr; gap: 8px; align-items: center; margin-top: 6px; }
 .ins-swatch { width: var(--control-h); height: var(--control-h); padding: 0; border: 1px solid var(--edge); border-radius: 8px; background: transparent; cursor: pointer; flex-shrink: 0; overflow: hidden; }

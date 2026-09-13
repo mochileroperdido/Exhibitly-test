@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { Product } from '../shared/content';
-import { listProducts } from '../shared/content';
+import type { Product, ProductStats } from '../shared/content';
+import { listProducts, listProductStats } from '../shared/content';
 import { loadWithSchemaGuard } from '../shared/schemaGuard';
 import { EmptyState } from '../shared/EmptyState';
 import { ProductEditor } from './ProductEditor';
 
 const UPSELL_EMAIL = 'inquiries@meetlathe.com';
+const ZERO_STATS: ProductStats = { hotspots: 0, media: 0, events: 0 };
 
 function parseRoute(hash: string): { mode: 'list' } | { mode: 'edit'; id: string | null } {
   const m = /^#\/products(?:\/([^/?]+))?/.exec(hash);
@@ -17,6 +18,7 @@ function parseRoute(hash: string): { mode: 'list' } | { mode: 'edit'; id: string
 export function ProductsPage() {
   const [route, setRoute] = useState(() => parseRoute(window.location.hash));
   const [products, setProducts] = useState<Product[] | null>(null);
+  const [stats, setStats] = useState<Map<string, ProductStats>>(new Map());
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,6 +32,9 @@ export function ProductsPage() {
     loadWithSchemaGuard('products', () => listProducts(), [] as Product[])
       .then(setProducts)
       .catch((e) => setError(e.message ?? 'load failed'));
+    loadWithSchemaGuard('products:stats', () => listProductStats(), new Map())
+      .then(setStats)
+      .catch(() => { /* stats optional — cards fall back to zeros */ });
   }, [route.mode]);
 
   if (route.mode === 'edit') {
@@ -69,25 +74,32 @@ export function ProductsPage() {
       </div>
       {error && <p className="ins-warn">{error}</p>}
       <div className="ins-cards">
-        {products.map((p) => (
-          <a key={p.id} className="ins-card" href={`#/products/${p.id}`}>
-            <div className="ins-card-top">
-              <span className="ins-card-name">{p.label}</span>
-              {p.model_url && <span className="ins-badge">3D</span>}
-            </div>
-            {p.subtitle && <div className="ins-card-dates">{p.subtitle}</div>}
-            <div className="ins-card-stats">
-              <span>
-                <span className="ins-num">{p.model_bytes ? `${(p.model_bytes / 1024 / 1024).toFixed(1)} MB` : '—'}</span>
-                <span className="ins-card-stat-l">Model</span>
-              </span>
-              <span>
-                <span className="ins-num">{p.triangle_count ? p.triangle_count.toLocaleString() : '—'}</span>
-                <span className="ins-card-stat-l">Triangles</span>
-              </span>
-            </div>
-          </a>
-        ))}
+        {products.map((p) => {
+          const s = stats.get(p.id) ?? ZERO_STATS;
+          return (
+            <a key={p.id} className="ins-card" href={`#/products/${p.id}`}>
+              <div className="ins-card-top">
+                <span className="ins-card-name">{p.label}</span>
+                {p.model_url && <span className="ins-badge">3D</span>}
+              </div>
+              {p.subtitle && <div className="ins-card-dates">{p.subtitle}</div>}
+              <div className="ins-card-stats">
+                <span>
+                  <span className="ins-num">{s.hotspots}</span>
+                  <span className="ins-card-stat-l">Hotspots</span>
+                </span>
+                <span>
+                  <span className="ins-num">{s.media}</span>
+                  <span className="ins-card-stat-l">Media</span>
+                </span>
+                <span>
+                  <span className="ins-num">{s.events}</span>
+                  <span className="ins-card-stat-l">Event{s.events === 1 ? '' : 's'}</span>
+                </span>
+              </div>
+            </a>
+          );
+        })}
       </div>
     </div>
   );

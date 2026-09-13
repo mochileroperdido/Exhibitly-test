@@ -296,6 +296,37 @@ export async function saveBrand(patch: { accentHex?: string | null; logoUrl?: st
   if (error) throw error;
 }
 
+// ── Product usage stats (for the list view) ────────────────────────────────
+export interface ProductStats {
+  hotspots: number;
+  media: number;
+  events: number;
+}
+
+/** One entry per productId. Products not in the map have zero of everything.
+ *  Uses one query per resource — no aggregate SQL because we run through
+ *  PostgREST which doesn't expose GROUP BY nicely; three small reads over the
+ *  handful of products a customer has is fine. */
+export async function listProductStats(): Promise<Map<string, ProductStats>> {
+  const db = getSupabase();
+  if (!db) return new Map();
+  const [hs, md, sp] = await Promise.all([
+    db.from('hotspots').select('product_id'),
+    db.from('media').select('product_id'),
+    db.from('show_products').select('product_id'),
+  ]);
+  const bump = (map: Map<string, ProductStats>, id: string, key: keyof ProductStats) => {
+    const cur = map.get(id) ?? { hotspots: 0, media: 0, events: 0 };
+    cur[key] += 1;
+    map.set(id, cur);
+  };
+  const out = new Map<string, ProductStats>();
+  (hs.data ?? []).forEach((r) => bump(out, r.product_id as string, 'hotspots'));
+  (md.data ?? []).forEach((r) => bump(out, r.product_id as string, 'media'));
+  (sp.data ?? []).forEach((r) => bump(out, r.product_id as string, 'events'));
+  return out;
+}
+
 // ── show_products ──────────────────────────────────────────────────────────
 export const MAX_PRODUCTS_PER_SHOW = 5;
 export const RECOMMENDED_PRODUCTS_PER_SHOW = 3;

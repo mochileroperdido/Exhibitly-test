@@ -140,7 +140,14 @@ export function Sidebar({
       >
         <button className="ins-sidebar-brand" onClick={onHome} aria-label="Lathe — all events">
           {collapsed ? (
-            <span className="ins-sidebar-monogram">L</span>
+            // Real brand glyph — the same stylized "L" the favicon uses.
+            // currentColor lets it inherit ink so it reads correctly in both
+            // themes without an orange placeholder pill.
+            <img
+              className="ins-sidebar-monogram"
+              src="/brand/logos/svg/lathe-favicon-l.svg"
+              alt="Lathe"
+            />
           ) : (
             <img
               className="ins-wordmark"

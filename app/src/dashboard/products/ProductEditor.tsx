@@ -223,7 +223,14 @@ export function ProductEditor({ productId, onDone }: { productId: string | null;
               />
             </label>
             {uploading && <p className="ins-sub" style={{ marginTop: 8 }}>Uploading…</p>}
-            {sizeMB && <p className="ins-sub" style={{ marginTop: 8 }}>Uploaded: {sizeMB} MB</p>}
+            {modelSignedUrl && (
+              <p className="ins-sub" style={{ marginTop: 8, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>
+                {sizeMB ? `${sizeMB} MB` : '— MB'}
+                {' · '}
+                {product?.triangle_count ? product.triangle_count.toLocaleString() : (hotspots.length ? '—' : '—')} triangles
+                {' · recommended under 25 MB / 30k triangles'}
+              </p>
+            )}
           </div>
           <p className="ins-sub" style={{ marginTop: 12 }}>
             Don't have a model yet? <a href={`mailto:${UPSELL_EMAIL}?subject=3D%20modeling%20service`}>We can build one for you →</a>
