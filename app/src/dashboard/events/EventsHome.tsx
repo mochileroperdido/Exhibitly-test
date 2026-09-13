@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listShows, eventStats, createShow, type Show } from './shows';
+import {
+  listProducts,
+  listForms,
+  setShowProducts,
+  setShowForm,
+  MAX_PRODUCTS_PER_SHOW,
+  RECOMMENDED_PRODUCTS_PER_SHOW,
+  type Product,
+  type FormDefinition,
+} from '../shared/content';
 
 // The "projects" screen: every event as a card, plus New event. Entering a card
 // opens its detail view.
@@ -89,8 +99,25 @@ function NewEventModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   const [name, setName] = useState('');
   const [startsOn, setStartsOn] = useState('');
   const [endsOn, setEndsOn] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [forms, setForms] = useState<FormDefinition[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedFormId, setSelectedFormId] = useState<string>(''); // '' = org default (null in DB)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+
+  useEffect(() => {
+    listProducts().then(setProducts).catch(() => { /* products optional */ });
+    listForms().then(setForms).catch(() => { /* forms optional */ });
+  }, []);
+
+  function toggleProduct(id: string) {
+    setSelectedProducts((prev) => {
+      if (prev.includes(id)) return prev.filter((p) => p !== id);
+      if (prev.length >= MAX_PRODUCTS_PER_SHOW) return prev; // hard cap
+      return [...prev, id];
+    });
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +126,12 @@ function NewEventModal({ onClose, onCreated }: { onClose: () => void; onCreated:
     setErr('');
     try {
       const { show } = await createShow({ name: name.trim(), startsOn, endsOn });
+      if (selectedProducts.length > 0) {
+        await setShowProducts(show.id, selectedProducts);
+      }
+      if (selectedFormId) {
+        await setShowForm(show.id, selectedFormId);
+      }
       onCreated(show.id);
     } catch (e2) {
       setErr((e2 as Error)?.message ?? 'Could not create event');
@@ -108,7 +141,7 @@ function NewEventModal({ onClose, onCreated }: { onClose: () => void; onCreated:
 
   return (
     <div className="ins-scrim" onClick={onClose}>
-      <form className="ins-modal" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+      <form className="ins-modal" onClick={(e) => e.stopPropagation()} onSubmit={submit} style={{ maxWidth: 620 }}>
         <h2 className="ins-h2" style={{ marginTop: 0 }}>New event</h2>
         <label className="ins-label" htmlFor="ne-name">Event name</label>
         <input id="ne-name" className="ins-field" value={name} onChange={(e) => setName(e.target.value)} placeholder="BuildTech Expo 2026" autoFocus />
@@ -122,6 +155,51 @@ function NewEventModal({ onClose, onCreated }: { onClose: () => void; onCreated:
             <input id="ne-end" type="date" className="ins-field" value={endsOn} onChange={(e) => setEndsOn(e.target.value)} />
           </div>
         </div>
+
+        <div style={{ marginTop: 16 }}>
+          <div className="ins-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Products on this event</span>
+            <span className="ins-num-small" style={{ color: selectedProducts.length > RECOMMENDED_PRODUCTS_PER_SHOW ? 'var(--accent)' : 'var(--muted)' }}>
+              {selectedProducts.length}/{MAX_PRODUCTS_PER_SHOW}
+            </span>
+          </div>
+          {products.length === 0 ? (
+            <p className="ins-sub" style={{ marginTop: 6 }}>No products yet — <a href="#/products/new">add one first</a>, or leave this empty and add products later.</p>
+          ) : (
+            <div className="ins-picker">
+              {products.map((p) => {
+                const on = selectedProducts.includes(p.id);
+                const disabled = !on && selectedProducts.length >= MAX_PRODUCTS_PER_SHOW;
+                return (
+                  <button
+                    type="button"
+                    key={p.id}
+                    className={'ins-picker-chip' + (on ? ' is-on' : '')}
+                    disabled={disabled}
+                    onClick={() => toggleProduct(p.id)}
+                    aria-pressed={on}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {selectedProducts.length > RECOMMENDED_PRODUCTS_PER_SHOW && (
+            <p className="ins-sub" style={{ marginTop: 6, color: 'var(--accent)' }}>
+              More than {RECOMMENDED_PRODUCTS_PER_SHOW} products on one kiosk can overwhelm visitors — pick your best {RECOMMENDED_PRODUCTS_PER_SHOW} if you can.
+            </p>
+          )}
+        </div>
+
+        <div style={{ marginTop: 16 }}>
+          <label className="ins-label" htmlFor="ne-form">Lead form</label>
+          <select id="ne-form" className="ins-field" value={selectedFormId} onChange={(e) => setSelectedFormId(e.target.value)}>
+            <option value="">Default (name · email · area of interest)</option>
+            {forms.map((f) => <option key={f.id} value={f.id}>{f.name}{f.is_default ? ' — default' : ''}</option>)}
+          </select>
+        </div>
+
         {err && <div style={{ color: 'var(--bad, #c0341d)', fontSize: 13, marginTop: 10 }}>{err}</div>}
         <div style={{ display: 'flex', gap: 10, marginTop: 18, justifyContent: 'flex-end' }}>
           <button type="button" className="ins-btn" onClick={onClose}>Cancel</button>
